@@ -14,13 +14,31 @@ normalizeState();
 let heVoice=null;
 function pickVoice(){const vs=speechSynthesis.getVoices();heVoice=vs.find(v=>v.lang&&v.lang.startsWith('he'))||null}
 if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
-// הקראה: then מופעל כשהמשפט נגמר (או אחרי זמן בטיחות), כדי שהמעבר למסך הבא לא יקטע את המשפט באמצע
-function speak(t,then){const go=then?once(then):null;
- if(STATE.muted||!('speechSynthesis' in window)){if(go)setTimeout(go,500);return}
- try{speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(t);u.lang='he-IL';if(heVoice)u.voice=heVoice;u.rate=.95;u.pitch=1.05;
+// הקראה: מנגנים קובץ קול מוכן מראש (voice-manifest.js), וכך ההוראות נשמעות בכל מכשיר -
+// גם כשלדפדפן אין קול עברי מובנה. אם חסרה הקלטה, נופלים חזרה לקול הדפדפן.
+// then מופעל כשהמשפט (או רצף המשפטים) נגמר, או אחרי זמן בטיחות, כדי שהמעבר למסך הבא לא יקטע את המשפט באמצע
+let curAudio=null;
+function stopSpeak(){if('speechSynthesis' in window)try{speechSynthesis.cancel()}catch(e){}
+ if(curAudio){const a=curAudio;curAudio=null;try{a.pause()}catch(e){}}}
+function ttsSay(t,go){if(!('speechSynthesis' in window)){if(go)setTimeout(go,500);return}
+ try{const u=new SpeechSynthesisUtterance(t);u.lang='he-IL';if(heVoice)u.voice=heVoice;u.rate=.95;u.pitch=1.05;
  if(go){u.onend=go;u.onerror=go;setTimeout(go,Math.min(9000,1400+t.length*170))}
  speechSynthesis.speak(u)}catch(e){if(go)go()}}
+function speak(t,then){const go=then?once(then):null;stopSpeak();
+ if(STATE.muted){if(go)setTimeout(go,500);return}
+ const segs=[].concat(t).filter(s=>s);if(!segs.length){if(go)setTimeout(go,300);return}
+ const playAt=i=>{if(i>=segs.length){if(go)go();return}
+  const s=segs[i],nxt=once(()=>playAt(i+1)),src=(typeof VOICE_CLIPS!=='undefined')&&VOICE_CLIPS[s];
+  if(!src){ttsSay(s,nxt);return}
+  const a=new Audio(src);curAudio=a;let tm=null;
+  const fin=()=>{if(tm){clearTimeout(tm);tm=null}if(curAudio===a)curAudio=null;nxt()};
+  a.onended=fin;
+  a.onerror=()=>{if(tm){clearTimeout(tm);tm=null}if(curAudio===a)curAudio=null;ttsSay(s,nxt)};
+  const kick=()=>{if(!tm)tm=setTimeout(fin,Math.min(12000,1600+s.length*200))};
+  const pr=a.play();
+  if(pr&&pr.then){pr.then(kick);pr.catch(()=>{if(tm){clearTimeout(tm);tm=null}if(curAudio===a)curAudio=null;ttsSay(s,nxt)})}
+  else kick()};
+ playAt(0)}
 // רמז לילדה: גם בקול וגם על המסך (למקרה שאין קול עברי במכשיר)
 function sayHint(t){speak(t);if(t)toast(t)}
 let AC=null;function ac(){if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}
@@ -39,7 +57,7 @@ function sfx(n){if(STATE.muted)return;
  else if(n==='applause')noise(1.1,.2);
  else if(n==='chop')noise(.08,.25);
  else if(n.startsWith('note'))tone(NOTES[(+n.slice(4)-1)%4],.3,'triangle',.14)}
-function toggleMute(){STATE.muted=!STATE.muted;saveState();document.getElementById('btn-sound').textContent=STATE.muted?'🔇':'🔊';if(STATE.muted&&'speechSynthesis' in window)speechSynthesis.cancel()}
+function toggleMute(){STATE.muted=!STATE.muted;saveState();document.getElementById('btn-sound').textContent=STATE.muted?'🔇':'🔊';if(STATE.muted)stopSpeak()}
 
 // --- אפקטים ---
 function confettiBurst(n){const em=['🎉','⭐','✨','🌟','💛','💜'];for(let i=0;i<n;i++){const s=el('span','confetti',em[i%em.length]);
@@ -219,7 +237,13 @@ function runVisit(role,lvl,ci){
   if(newBadge&&totalBadges===allBadges)line=`כל התגים באוסף! ${KID}, את אלופת התפקידים!`;
   else if(newBadge&&totalBadges%6===0)line+=` יש לך כבר ${totalBadges} תגים!`;
    cc.appendChild(el('p','screen-sub',line));sfx(newBadge?'applause':'sparkle');confettiBurst(newBadge?18:10);
-   if(newBadge&&lvl<role.levels.length){cc.appendChild(el('p','screen-sub',`רמה ${lvl+1} נפתחה!`));speak(line+` רמה ${lvl+1} נפתחה!`)}else speak(line);
+   // ההקראה מחולקת למשפטים נפרדים כדי שכל אחד ימצא את ההקלטה המוכנה שלו
+   const segs=[];
+   if(newBadge){if(totalBadges===allBadges)segs.push(`כל התגים באוסף! ${KID}, את אלופת התפקידים!`);
+    else{segs.push(`השלמת את רמה ${lvl} וקיבלת ${role.badge}!`);if(totalBadges%6===0)segs.push(`יש לך כבר ${totalBadges} תגים!`)}}
+   else segs.push(`עזרת ל${ch.c[1]}! כל הכבוד ${KID}!`);
+   if(newBadge&&lvl<role.levels.length){cc.appendChild(el('p','screen-sub',`רמה ${lvl+1} נפתחה!`));segs.push(`רמה ${lvl+1} נפתחה!`)}
+   speak(segs);
    if(newBadge&&lvl<role.levels.length)STATE.fresh[role.id]=lvl+1;
    const b=el('button','big-btn','המשך ▶');const shownAt=Date.now();b.onclick=()=>{if(Date.now()-shownAt<800)return;sfx('tick');navStack.length=baseDepth;show._cur=null;show(levelScreen.bind(null,role,lvl),role.name+' · רמה '+lvl)};cc.appendChild(b);
   },visitTitle,false)};

@@ -59,7 +59,7 @@ order:{run:(area,p,done)=>{let next=0;const cards=shuffle(p.cards.map((c,i)=>({e
  cards.forEach(c=>{const b=el('button','opt-btn',c.e+`<small>${c.n}</small>`);row.appendChild(b);
   b.onclick=()=>{
    if(c.i===next){slots.children[next].textContent=c.e;slots.children[next].classList.add('filled');b.disabled=true;b.style.opacity=.35;sfx('good');next++;
-    if(next>=p.cards.length){confettiBurst(6);speak(c.n+'. '+(p.doneSay||'סדר מושלם!'),done)}else speak(c.n)}
+    if(next>=p.cards.length){confettiBurst(6);speak([c.n,p.doneSay||'סדר מושלם!'],done)}else speak(c.n)}
    else{sfx('oops');b.classList.add('hint');setTimeout(()=>b.classList.remove('hint'),1300);sayHint(p.hint||'מה בא קודם?')}}
  })}
 },
