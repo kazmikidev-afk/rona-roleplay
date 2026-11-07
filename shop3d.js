@@ -142,11 +142,12 @@ function startShop3D(root) {
     const b = w.hud.querySelector('.w3d-banner .w3d-spk'); if (b) b.onclick = () => { if (say) fb(say) };
   }
   const _dispose = w.dispose;
-  w.dispose = () => { haltSpeech(); _dispose() };
+  w.dispose = () => { haltSpeech(); removeEventListener('resize', onFitRes); _dispose() };
 
   if (!document.getElementById('shop-style')) {
     const st = document.createElement('style'); st.id = 'shop-style';
     st.textContent = '.shop-lbl{position:absolute;transform:translate(-50%,-100%);display:flex;gap:4px;padding:4px 7px;background:rgba(255,255,255,.95);border:3px solid #fb8c00;border-radius:14px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.25)}'
+      + '.shop-ico{position:absolute;transform:translate(-50%,-50%);padding:3px;background:rgba(255,255,255,.95);border:2px solid #90a4ae;border-radius:12px;pointer-events:none;box-shadow:0 2px 5px rgba(0,0,0,.22);line-height:0}'
       + '.shop-fx{position:absolute;transform:translate(-50%,-50%);pointer-events:none;animation:shopfx .9s ease-out forwards}@keyframes shopfx{0%{transform:translate(-50%,-50%) scale(.4);opacity:0}25%{transform:translate(-50%,-50%) scale(1.25);opacity:1}100%{transform:translate(-50%,-80%) scale(1);opacity:0}}'
       + '.shop-cnt{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:8px;background:rgba(255,255,255,.92);border-radius:14px;padding:7px 12px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.2)}.shop-cnt span{width:18px;height:18px;border-radius:50%;border:3px solid #fb8c00;background:#fff}.shop-cnt span.on{background:#43a047;border-color:#2e7d32}';
     document.head.appendChild(st);
@@ -168,7 +169,32 @@ function startShop3D(root) {
     const c = CAMS[i]; if (c) w.flyTo(c.p[0], c.p[1], c.p[2], c.l[0], c.l[1], c.l[2]);
     ticks.length = 0; ticks.push(pinTick);
     [stageFind, stageShelfsort, stageCount, stagePay, stageDone][i]();
+    fitStage();
   }
+  // מסגור רספונסיבי: מרחיקים את המצלמה (לאורך קו המבט) עד שכל פריט, טבעת ותווית בתוך הפריים - לפי יחס המסך בפועל (לא רק 760)
+  function fitStage() {
+    const c = CAMS[stage]; if (!c || stage >= 4) return;
+    const cv = w.renderer.domElement, Wd = cv.clientWidth || 360, Hd = cv.clientHeight || 640, a = Wd / Hd;
+    const dolly = a < .75 ? 1.32 : (a < 1.1 ? 1.14 : 1);
+    const cam = new THREE.PerspectiveCamera(w.camera.fov, a, .1, 60);
+    const L = V3(c.l[0], c.l[1], c.l[2]), P = V3(c.p[0], c.p[1], c.p[2]);
+    const pts = []; // [world point, px margin]
+    stageDrags.forEach(d => { if (!d.active) return; [-.4, .4].forEach(dx => pts.push([d.home.clone().add(V3(dx, 0, 0)), 16])); pts.push([d.home.clone().add(V3(0, -.05, .3)), 16, 58]) });
+    stageTargets.forEach(t => { const r = t.ring.geometry.parameters.radius; [-r, r].forEach(dx => pts.push([t.pos.clone().add(V3(dx, 0, 0)), 14])) });
+    pins.forEach(p => { if (p.ico) return; const v = V3(0, 0, 0); p.o.getWorldPosition(v); [-.62, .62].forEach(dx => pts.push([v.clone().add(V3(dx, 0, 0)), 8])) });
+    let k = 0;
+    for (; k <= 16; k++) {
+      const f = 1 + .06 * k, pos = L.clone().lerp(P, dolly * f);
+      cam.position.copy(pos); cam.lookAt(L); cam.updateMatrixWorld(true); cam.updateProjectionMatrix();
+      const ok = pts.every(([v, m, mb]) => { const n = v.clone().project(cam), x = (n.x + 1) / 2 * Wd, y = (1 - n.y) / 2 * Hd; return x >= m && x <= Wd - m && (!mb || y <= Hd - mb) });
+      if (ok) break;
+    }
+    const f = 1 + .06 * Math.min(k, 16), np = L.clone().lerp(P, f);
+    w.flyTo(np.x, np.y, np.z, c.l[0], c.l[1], c.l[2]);
+    window.__shopFit = { stage, k, a: +a.toFixed(3) };
+  }
+  const onFitRes = () => { fitStage() };
+  addEventListener('resize', onFitRes);
   function clearGroup(arr) { arr.forEach(o => { o.parent && o.parent.remove(o) }); arr.length = 0 }
   let stageObjs = [], stageDrags = [], stageTargets = [], pins = [];
   function cleanupStage() {
@@ -184,7 +210,7 @@ function startShop3D(root) {
   const pt = (x, y, z) => ({ getWorldPosition: v => v.set(x, y, z) });
   // כרטיס DOM הצמוד לנקודה בעולם
   function pin(elm, x, y, z) { w.hud.appendChild(elm); stageDom.push(elm); pins.push({ elm, o: pt(x, y, z) }); const sp = w.screenPos(pins[pins.length - 1].o); elm.style.left = sp.x + 'px'; elm.style.top = sp.y + 'px' }
-  function pinTick() { pins.forEach(p => { const sp = w.screenPos(p.o); p.elm.style.left = sp.x + 'px'; p.elm.style.top = sp.y + 'px' }) }
+  function pinTick() { pins.forEach(p => { const sp = w.screenPos(p.o); p.elm.style.left = sp.x + 'px'; p.elm.style.top = sp.y + 'px'; if (p.hide) p.elm.style.display = p.hide() ? 'none' : '' }) }
   function icons(keys, color) {
     const d = document.createElement('div'); d.className = 'shop-lbl'; if (color) d.style.borderColor = color;
     d.innerHTML = keys.map(k => '<svg viewBox="0 0 24 24" width="30" height="30">' + ICONS[k] + '</svg>').join(''); return d;
@@ -219,7 +245,7 @@ function startShop3D(root) {
   }
   // הפריט נשאר גלוי בתוך היעד (לא נעלם)
   function land(d, t, k, per, sc) {
-    d.active = false; d.grp.scale.setScalar(sc || .7);
+    d.active = false; d.landed = true; d.grp.scale.setScalar(sc || .7);
     const c = k % per, r = Math.floor(k / per);
     d.grp.position.set(t.pos.x + (c - (per - 1) / 2) * .26, t.pos.y - .12 - r * .02, t.pos.z + .1 + r * .2);
     flash(t.pos.x, t.pos.y + .3, t.pos.z + .3, true);
@@ -233,7 +259,14 @@ function startShop3D(root) {
   function mkItem(g, o) {
     const it = itemModel(g.k, scene); it.scale.setScalar(o.scale || 1.55); stageObjs.push(it);
     const dr = w.makeDraggable(it, { proxyR: .34, onPick: () => { sfx('tick'); fb(g.n) }, onMiss: () => { fb(WRONG) } });
-    dr.userData = o.ud; stageDrags.push(dr); return it;
+    dr.userData = o.ud; stageDrags.push(dr);
+    // תמונה צפה מעל הפריט - רונה לא קוראת וצורת הפריט לא תמיד מזוהה
+    const bub = document.createElement('div'); bub.className = 'shop-ico';
+    bub.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26">' + ICONS[g.k] + '</svg>';
+    w.hud.appendChild(bub); stageDom.push(bub);
+    const po = { getWorldPosition: v => v.copy(it.position).add(V3(.3 * it.scale.x / 1.5, .38 * it.scale.x / 1.5 + .1, .2)) };
+    pins.push({ elm: bub, o: po, ico: true, hide: () => !!dr.landed });
+    return it;
   }
   function praise(next) {
     let fired = false; const go = () => { if (!fired) { fired = true; setStage(next) } };
@@ -331,17 +364,17 @@ function startShop3D(root) {
     banner(big ? 'משלמים ונותנים עודף!' : 'משלמים בקופה!', 'עכשיו משלמים בקופה! גררי את המטבעות');
     speak('עכשיו משלמים בקופה! גררי את המטבעות');
     const tray = w.group(0, 0, 0); stageObjs.push(tray);
-    w.box(3.4, .12, .9, '#8d6e63', 0, .5, 2.6, tray); w.box(3.3, .04, .8, '#fdf6ee', 0, .58, 2.6, tray);
+    w.box(3.4, .12, .9, '#5d4037', 0, .5, 2.6, tray); w.box(3.3, .04, .8, '#795548', 0, .58, 2.6, tray);
     const nCoins = price + (eff >= 2 ? 1 : 0), needChange = big ? 2 : 0;
     const coins = [];
     const mkCoin = (change) => {
-      const coin = w.group(0, .7, 2.6); stageObjs.push(coin); coin.scale.setScalar(1.5); coin.rotation.x = 1.0;
-      w.cyl(.14, .14, .04, '#ffd54f', 0, 0, 0, coin); w.cyl(.1, .1, .05, '#ffca28', 0, 0, 0, coin);
+      const coin = w.group(0, .9, 2.6); stageObjs.push(coin); coin.scale.setScalar(1.5); coin.rotation.x = 1.0;
+      w.cyl(.14, .14, .05, '#e65100', 0, 0, 0, coin); w.cyl(.11, .11, .06, '#ffb300', 0, 0, 0, coin);
       const dr = w.makeDraggable(coin, { proxyR: .26, onPick: () => sfx('tick'), onMiss: () => fb(WRONG) });
       dr.userData = change ? { change: true } : { coin: true }; stageDrags.push(dr); return coin;
     };
     for (let i = 0; i < nCoins; i++) coins.push(mkCoin(false));
-    placeAll(coins, grid(nCoins, 7, .5, .72, [2.6]));
+    placeAll(coins, grid(nCoins, 7, .5, .92, [2.6]));
     let paid = 0, change = 0; dots(price + needChange);
     const rg = register.getWorldPosition(V3(0, 0, 0)); // מרכז הקופה הנראה
     const rz = counterG.position.z + .75, rx = counterG.position.x;
@@ -353,7 +386,7 @@ function startShop3D(root) {
           if (needChange) {
             speak('ועכשיו תני את העודף ללקוחה');
             const ch = []; for (let i = 0; i < needChange; i++) ch.push(mkCoin(true));
-            placeAll(ch, grid(needChange, 4, .6, .72, [2.6]).map(v => v));
+            placeAll(ch, grid(needChange, 4, .6, .92, [2.6]).map(v => v));
             stageDrags.forEach(dd => dd.home.copy(dd.grp.position));
             tgt.ring.visible = false; tgtCust.ring.visible = true;
           } else { w.progressStep(); praise(4) }
