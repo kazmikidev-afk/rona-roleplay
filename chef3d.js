@@ -6,6 +6,59 @@ function startChef3D(root) {
   if (!w) return null;
   const { THREE, scene } = w;
   const P = W3D_PALETTE;
+  // תאורה פחות שטופה בסצנת המטבח בלבד (צבעי האוכל נשטפו לוורוד/צהוב חיוור)
+  scene.traverse(o => { if (o.isDirectionalLight && o.castShadow) o.intensity = 1.0; else if (o.isDirectionalLight) o.intensity = .3; else if (o.isHemisphereLight) o.intensity = .5 });
+  w.renderer.toneMappingExposure = .9;
+
+  // ---------- הקראה מקומית: קבצי קול מוכנים בלבד, בלי קול דפדפן, בלי חפיפה ----------
+  // טוקן אחד: כל speak חדש מבטל את הקודם כולל ה-callback שלו. חסרה הקלטה -> שקט (לא TTS).
+  // תור: משפטים לא נחתכים באמצע; הוראות מצטברות לפי הסדר. now=true (נגיעה בחפץ/כפתור) מפסיק ומנגן מיד.
+  let spTok = 0, spTimer = null, spQ = [], spPlaying = false;
+  const spAudio = new Audio();
+  try { if ('speechSynthesis' in window) speechSynthesis.cancel() } catch (e) {}
+  function stopAll() { spTok++; spQ = []; spPlaying = false; if (spTimer) { clearTimeout(spTimer); spTimer = null } try { spAudio.pause() } catch (e) {} }
+  function spPump() {
+    if (spPlaying || !spQ.length) return;
+    const it = spQ.shift(), my = spTok; spPlaying = true; if (it.start) it.start();
+    let fin = false;
+    const done = () => { if (fin || my !== spTok) return; fin = true; if (spTimer) { clearTimeout(spTimer); spTimer = null } spPlaying = false; if (it.then) it.then(); spPump() };
+    const src = (typeof VOICE_CLIPS !== 'undefined') && VOICE_CLIPS[it.t];
+    if (!src) { window.__chefMissingClip = (window.__chefMissingClip || []).concat(it.t); spTimer = setTimeout(done, 300); return }
+    if (typeof STATE !== 'undefined' && STATE.muted) { spTimer = setTimeout(done, 400); return }
+    spAudio.onended = done; spAudio.onerror = () => { if (spTimer) clearTimeout(spTimer); spTimer = setTimeout(done, 300) };
+    spAudio.src = src;
+    spTimer = setTimeout(done, Math.min(9000, 2500 + it.t.length * 160)); // רשת ביטחון: אין תלות באודיו להתקדמות
+    try { const pr = spAudio.play(); if (pr && pr.catch) pr.catch(() => { if (my === spTok) { if (spTimer) clearTimeout(spTimer); spTimer = setTimeout(done, 300) } }) } catch (e) {}
+  }
+  function speak(t, then, now, start) {
+    if (now) stopAll();
+    if (spQ.length >= 3) spQ.splice(0, spQ.length - 2); // לא נערמים משפטים ישנים
+    spQ.push({ t, then, start }); spPump();
+  }
+  // כפתור הרמקול בבאנר מנגן דרך אותו מנוע
+  function banner(text, say) {
+    w.banner(text, null);
+    const b = w.hud.querySelector('.w3d-banner .w3d-spk'); if (b) b.onclick = () => speak(say || text, null, true);
+    if (say !== null) speak(say || text);
+  }
+  // מונה נקודות: כמה נשאר/נעשה (מבלי לקרוא)
+  let cntEl = null;
+  function counter(total, done) {
+    if (cntEl) cntEl.remove();
+    cntEl = document.createElement('div'); cntEl.className = 'chef-cnt';
+    for (let i = 0; i < total; i++) { const d = document.createElement('span'); if (i < (done || 0)) d.className = 'on'; cntEl.appendChild(d) }
+    w.hud.appendChild(cntEl);
+  }
+  function counterSet(n) { if (cntEl) [...cntEl.children].forEach((d, i) => d.className = i < n ? 'on' : '') }
+  function counterOff() { if (cntEl) { cntEl.remove(); cntEl = null } }
+  if (!document.getElementById('chef-style')) {
+    const st = document.createElement('style'); st.id = 'chef-style';
+    st.textContent = '.chef-cnt{display:flex;gap:8px;background:rgba(255,255,255,.9);border-radius:14px;padding:6px 12px;pointer-events:none}.chef-cnt span{width:18px;height:18px;border-radius:50%;background:#d7ccc8;border:2px solid #8d6e63}.chef-cnt span.on{background:#43a047;border-color:#2e7d32}'
+      + '.chef-lbl.pulse{animation:chefp .5s infinite alternate}@keyframes chefp{to{transform:translate(-50%,0) scale(1.18)}}.chef-lbl{position:absolute;pointer-events:auto;transform:translate(-50%,0);display:flex;align-items:center;gap:6px;border:3px solid #fff;border-radius:16px;padding:6px 12px;font-weight:800;font-size:clamp(15px,2.4vh,19px);color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.3);white-space:nowrap;cursor:pointer}';
+    document.head.appendChild(st);
+  }
+  const _dispose = w.dispose;
+  w.dispose = () => { stopAll(); counterOff(); _dispose() };
 
   const lvl = Math.min(3, (typeof STATE !== 'undefined' && STATE.unlocked && STATE.unlocked.chef) || 1);
   const prog = w.getProgress('chef3d') || { visits: 0, stars: 0 };
@@ -43,11 +96,11 @@ function startChef3D(root) {
   w.box(1.5, 1, .1, '#fff', 0, 0, 0, ticket);
   w.box(1.3, .25, .12, '#ff5e8a', 0, .4, 0, ticket);
   // שולחן לקוח
-  const tableG = w.group(3.6, 0, 1.2);
+  const tableG = w.group(1.9, 0, .5);
   w.cyl(.8, .8, .08, '#f5e0c8', 0, .85, 0, tableG);
   w.cyl(.09, .12, .85, '#8d6e63', 0, .42, 0, tableG);
   // הלקוחה — דובונית חמודה
-  const cust = w.group(3.6, 0, -.1);
+  const cust = w.group(1.9, 0, -.9);
   const cBody = w.ball(.55, '#b57edc', 0, .95, 0, cust, 1, 1.15, 1);
   const cHead = w.ball(.42, '#c79bee', 0, 1.85, 0, cust);
   w.ball(.13, '#c79bee', -.3, 2.2, 0, cust); w.ball(.13, '#c79bee', .3, 2.2, 0, cust);
@@ -60,24 +113,24 @@ function startChef3D(root) {
   function vegModel(kind, parent) {
     const g = w.group(0, 0, 0, parent);
     const M = {
-      tomato: () => { w.ball(.16, '#e53935', 0, .16, 0, g); w.cyl(.03, .05, .05, '#43a047', 0, .33, 0, g) },
+      tomato: () => { w.ball(.16, '#c62828', 0, .16, 0, g); w.cyl(.03, .05, .05, '#43a047', 0, .33, 0, g) },
       cucumber: () => { const c = w.cyl(.09, .09, .44, '#43a047', 0, .1, 0, g); c.rotation.z = Math.PI / 2 },
-      carrot: () => { const c = w.cyl(.04, .13, .5, '#ef6c00', 0, .24, 0, g); [-.05, 0, .05].forEach(x => w.ball(.06, '#43a047', x, .52, 0, g, .7, 1.2, .7)) }, // כתום עמוק + צמטר ירוק
+      carrot: () => { const c = w.cyl(.04, .13, .5, '#d84315', 0, .24, 0, g); [-.05, 0, .05].forEach(x => w.ball(.06, '#2e7d32', x, .52, 0, g, .7, 1.2, .7)) }, // כתום עמוק + צמטר ירוק
       corn: () => { w.ball(.1, '#fdd835', -.07, .12, 0, g, 1, 1.6, 1); w.ball(.1, '#ffee58', .07, .12, 0, g, 1, 1.6, 1) },
       lettuce: () => { w.ball(.19, '#7cb342', 0, .18, 0, g, 1, .8, 1); w.ball(.13, '#9ccc65', 0, .24, 0, g, 1, .7, 1) },
       bread: () => { w.box(.36, .2, .24, '#d7a86e', 0, .1, 0, g); w.ball(.18, '#e3bd8d', 0, .2, 0, g, 1, .5, .68) },
       cheese: () => { const c = w.box(.3, .1, .3, '#ffca28', 0, .05, 0, g); c.rotation.y = .6 },
-      egg: () => w.ball(.15, '#fff8e1', 0, .16, 0, g, 1, 1.38, 1), // סילואט סגלגל ברור
+      egg: () => (w.ball(.15, '#fff3c4', 0, .16, 0, g, 1, 1.38, 1), w.ball(.06, '#ffb300', 0, .18, .12, g, 1, 1, .5)), // סילואט סגלגל ברור
       banana: () => { const b = w.ball(.09, '#ffeb3b', 0, .1, 0, g, 2.6, 1, 1); b.rotation.z = .5 },
       strawberry: () => { w.ball(.14, '#e53935', 0, .14, 0, g, 1, 1.1, 1); w.ball(.05, '#43a047', 0, .29, 0, g, 1, .4, 1) },
-      apple: () => { w.ball(.16, '#e53935', 0, .16, 0, g); w.cyl(.015, .015, .1, '#6d4c41', 0, .34, 0, g) },
+      apple: () => { w.ball(.16, '#b71c1c', 0, .16, 0, g); w.cyl(.015, .015, .1, '#4e342e', 0, .34, 0, g); const lf = w.ball(.05, '#2e7d32', .05, .37, 0, g, 1.6, .5, 1); lf.rotation.z = .5 },
       orange: () => w.ball(.15, '#fb8c00', 0, .15, 0, g),
       milk: () => { w.box(.2, .36, .2, '#eceff1', 0, .18, 0, g); w.box(.2, .09, .2, '#4fc3f7', 0, .4, 0, g) },
       juice: () => { w.box(.2, .34, .2, '#ffb74d', 0, .17, 0, g); w.box(.2, .07, .2, '#e65100', 0, .37, 0, g) },
       candy: () => { // ממתק עטוף: גוף ורוד + קצוות עטיפה — לא כדור
-        const b = w.cyl(.1, .1, .2, '#ec407a', 0, .12, 0, g); b.rotation.z = Math.PI / 2;
-        const l = w.cyl(.005, .08, .12, '#f8bbd0', .2, .12, 0, g); l.rotation.z = -Math.PI / 2;
-        const r = w.cyl(.08, .005, .12, '#f8bbd0', -.2, .12, 0, g); r.rotation.z = -Math.PI / 2 },
+        const b = w.cyl(.1, .1, .2, '#d81b60', 0, .12, 0, g); b.rotation.z = Math.PI / 2;
+        const l = w.cyl(.005, .08, .12, '#f48fb1', .2, .12, 0, g); l.rotation.z = -Math.PI / 2;
+        const r = w.cyl(.08, .005, .12, '#f48fb1', -.2, .12, 0, g); r.rotation.z = -Math.PI / 2 },
       cookie: () => { w.cyl(.16, .16, .06, '#a1703a', 0, .03, 0, g); w.ball(.03, '#5d4037', .05, .07, .05, g); w.ball(.03, '#5d4037', -.06, .07, -.03, g) },
       fries: () => { w.box(.2, .18, .14, '#e53935', 0, .09, 0, g); for (let i = 0; i < 4; i++) w.box(.035, .2, .035, '#fdd835', -.06 + i * .04, .24, 0, g) },
       cake: () => { w.cyl(.18, .18, .16, '#f48fb1', 0, .08, 0, g); w.cyl(.19, .19, .05, '#fff', 0, .18, 0, g); w.ball(.05, '#e53935', 0, .23, 0, g) },
@@ -105,20 +158,20 @@ function startChef3D(root) {
   let stage = 0;
   let dish = DISHES[Math.floor(Math.random() * DISHES.length)];
   // freestyle (רמות 2-3 ב-2D): בחירה חופשית של הילדה, לסירוגין עם הזמנת לקוח
-  const freestyle = lvl >= 2 && (prog.visits % 2 === 1);
+  let freestyle = lvl >= 2 && (prog.visits % 2 === 1);
   w.progressInit(6);
 
   const CAMS = [ // מוקד מצלמה לכל שלב (קרוב לאזור הפעולה — קריטי בנייד)
     { p: [-1.3, 2.5, 5.6], l: [-2.1, 1.5, 0.2] },  // recipe: דוכן+חלון הזמנות
-    { p: [0, 2.5, 6.0],    l: [0, 1.1, 1.5] },     // gather: מדף+סל
+    { p: [0.1, 2.9, 7.0],  l: [0.1, 1.1, 1.5] },   // gather: מדף+סל
     { p: [-0.9, 2.4, 5.4], l: [-1.1, 0.9, 2.0] },  // chop: קרש
     { p: [0, 3.5, 6.4],    l: [0, 1.0, -2.8] },    // steps: קערה קדמית+תחנות אחוריות בפריים
-    { p: [1.3, 2.6, 6.2],  l: [1.9, 1.0, 1.5] },   // serve: צלחת+שולחן לקוח בפריים
-    { p: [0, 2.6, 6.2],    l: [0, 1.0, 2.3] },     // sort: סלים
-    { p: [0, 2.5, 6.4],    l: [0, 1.3, 0] }        // done: כללי
+    { p: [1.0, 2.7, 6.6],  l: [1.5, 1.0, 1.3] },   // serve: צלחת+שולחן לקוח בפריים
+    { p: [0, 3.4, 7.4],    l: [0, 0.9, 2.1] },     // sort: סלים
+    { p: [0.9, 2.6, 7.0],  l: [0.9, 1.3, 0] }      // done: כללי
   ];
   function setStage(i) {
-    stage = i;
+    stage = i; stopAll(); basket.visible = (i === 1); // הסל רק בשלב האיסוף — לא חוסם את הצלחת/הקערה
     const c = CAMS[i]; if (c) w.flyTo(c.p[0], c.p[1], c.p[2], c.l[0], c.l[1], c.l[2]);
     ticks.length = 0;
     [stageRecipe, stageGather, stageChop, stageSteps, stageServe, stageSort, stageDone][i]();
@@ -128,6 +181,7 @@ function startChef3D(root) {
   // כלי/חפצים נגררים כלליים
   let stageObjs = [], stageDrags = [], stageTargets = [];
   function cleanupStage() {
+    counterOff(); document.querySelectorAll('.chef-lbl').forEach(e => e.remove());
     clearGroup(stageObjs);
     stageDrags.forEach(d => { const i = draggables.indexOf(d); if (i >= 0) draggables.splice(i, 1) });
     stageTargets.forEach(t => { if (t.ring) t.ring.visible = false; const i = targets.indexOf(t); if (i >= 0) targets.splice(i, 1) }); // מסתיר טבעות ישנות — לא להשאיר רמזי רפאים
@@ -138,7 +192,7 @@ function startChef3D(root) {
   // ---------- שלב 0: בחירת מנה ----------
   function stageRecipe() {
     cleanupStage();
-    w.banner('בחרי מה מכינים היום במטבח', null);
+    banner('בחרי מה מכינים היום במטבח', null);
     if (!freestyle) speak('בחרי מה מכינים היום במטבח', () => speak('הלקוחה ביקשה ' + dish.name + '!'));
     else speak('בחרי מה מכינים היום במטבח');
     const stand = w.group(-2.2, 0, 1.2); stageObjs.push(stand);
@@ -149,7 +203,7 @@ function startChef3D(root) {
       w.cyl(.26, .2, .05, '#ffffff', 0, 0, 0, plate);
       vegModel(d.id, plate);
       const dr = w.makeDraggable(plate, {
-        proxyR: .34, onPick: () => speak(d.name)
+        proxyR: .34, onPick: () => speak(d.name, null, true)
       });
       stageDrags.push(dr);
     });
@@ -175,7 +229,7 @@ function startChef3D(root) {
   // ---------- שלב 1: איסוף מרכיבים ----------
   function stageGather() {
     cleanupStage();
-    w.banner('אספי את המרכיבים מהמדף', null);
+    banner('אספי את המרכיבים מהמדף', null);
     speak('אספי את המרכיבים מהמדף', () => speak(dish.name));
     const shelf = w.group(0, 0, 1.2); stageObjs.push(shelf);
     w.box(4.6, .1, .8, '#a1887f', 0, .5, 0, shelf);
@@ -184,9 +238,10 @@ function startChef3D(root) {
     const decoys = DECOYS.filter(k => !need.includes(k)).slice(0, lvl);
     const items = need.concat(decoys).sort(() => Math.random() - .5);
     let got = 0;
+    counter(need.length, 0);
     items.forEach((k, i) => {
       const row = i < 4 ? 1.35 : .6, col = (i % 4) - 1.5;
-      const it = vegModel(k, shelf); it.position.set(col * .85 + .05, row, 0); // מכווץ מהקצוות — מחוות חזרה של אנדרויד
+      const it = vegModel(k, shelf); it.position.set(col * .7 - .1, row, 0); // מכווץ מהקצוות — מחוות חזרה של אנדרויד
       const needed = need.includes(k);
       const dr = w.makeDraggable(it, {
         proxyR: .3, onPick: () => sfx('tick'),
@@ -200,7 +255,7 @@ function startChef3D(root) {
       ringRot: { x: Math.PI / 2 },
       onDrop: (d) => {
         if (d.userData.needed) {
-          got++; sfx('good'); speak('' + got);
+          got++; counterSet(got); sfx('good'); speak('' + got);
           d.grp.position.set(0, 0, 0); d.grp.scale.setScalar(.01); d.active = false;
         } else {
           sfx('oops'); speak('זה לא במתכון. נסי שוב!'); d.grp.position.copy(d.home);
@@ -221,18 +276,19 @@ function startChef3D(root) {
   // ---------- שלב 2: קיצוץ ----------
   function stageChop() {
     cleanupStage();
-    w.banner('קוצצים', null);
+    banner('קוצצים', null);
     speak('קוצצים', () => speak('קצצי את הירקות על הקרש'));
     const items = dish.ings.slice(0, 2 + lvl);
     let chopped = 0;
+    counter(items.length, 0);
     const rubs = [];
     items.forEach((k, i) => {
-      const it = vegModel(k, scene); it.position.set(-1.6 + i * .8, .95, 2.1); stageObjs.push(it);
+      const it = vegModel(k, scene); it.position.set(-1.2 + (i - (items.length - 1) / 2) * .62, .95, 2.1); stageObjs.push(it);
       const r = w.registerRub(it, {
         needed: 260, radiusPx: 90,
         onProgress: (p) => { it.scale.setScalar(1 - p * .4); it.rotation.y += .1; sfx('tick') },
         onDone: () => {
-          chopped++; sfx('good'); speak('' + chopped);
+          chopped++; counterSet(chopped); sfx('good'); speak('' + chopped);
           it.visible = false;
           if (chopped >= items.length) {
             speak('יופי! בחרת נכון'); // generic praise exists; use exact existing clip
@@ -247,7 +303,7 @@ function startChef3D(root) {
   // ---------- שלב 3: שלבי הכנה בסדר ----------
   function stageSteps() {
     cleanupStage();
-    w.banner('מכינים בסדר הנכון!', null);
+    banner('מכינים בסדר הנכון!', null);
     speak('מכינים בסדר הנכון!');
     const bowl = w.group(0, .95, 2.1); stageObjs.push(bowl);
     w.cyl(.3, .2, .2, '#eceff1', 0, .1, 0, bowl);
@@ -291,8 +347,8 @@ function startChef3D(root) {
   // ---------- שלב 4: הגשה ----------
   function stageServe() {
     cleanupStage();
-    w.banner('המנה מוכנה! הגישי ללקוחה', 'קשטי את הצלחת והגישי בחיוך');
-    const plate = w.group(1.0, .95, 2.1); stageObjs.push(plate);
+    banner('המנה מוכנה! הגישי ללקוחה', 'קשטי את הצלחת והגישי בחיוך');
+    const plate = w.group(.6, .95, 2.1); stageObjs.push(plate);
     w.cyl(.34, .26, .06, '#ffffff', 0, .03, 0, plate);
     vegModel(dish.id, plate);
     const dr = w.makeDraggable(plate, { proxyR: .4, onPick: () => sfx('tick'), onMiss: () => speak('הלקוחה מחכה ליד השולחן!') });
@@ -311,24 +367,37 @@ function startChef3D(root) {
     stageTargets.push(tgt); tgt.ring.visible = true;
   }
 
+  function mkLbl(text, col, say) {
+    const l = document.createElement('div'); l.className = 'chef-lbl'; l.style.background = col; l.textContent = text;
+    l.onclick = () => speak(say, null, true); w.root.appendChild(l); return l;
+  }
   // ---------- שלב 5: מיון ----------
   function stageSort() {
     cleanupStage();
-    w.banner('מייני: אוכל של כל יום או של פעמים מיוחדות');
+    banner('מייני: אוכל של כל יום או של פעמים מיוחדות');
     const n = 2 + lvl * 2;
     const goods = SORT_POOL.filter(s => s.good), bads = SORT_POOL.filter(s => !s.good);
     const items = [];
     for (let i = 0; i < n / 2; i++) { items.push(goods[i % goods.length]); items.push(bads[i % bads.length]) }
     items.sort(() => Math.random() - .5);
-    const binG = w.group(-.8, 0, 2.1), binB = w.group(.8, 0, 2.1); // בתוך פריים הנייד כולל שוליים
+    const binG = w.group(-.85, 0, 2.7), binB = w.group(.85, 0, 2.7);
     stageObjs.push(binG, binB);
-    w.cyl(.45, .35, .5, '#43a047', 0, .95, 0, binG);
-    w.cyl(.45, .35, .5, '#ef6c00', 0, .95, 0, binB);
-    let left = items.length;
+    w.cyl(.45, .35, .5, '#2e7d32', 0, .95, 0, binG);
+    w.cyl(.45, .35, .5, '#e65100', 0, .95, 0, binB);
+    // דוגמאות על הסלים: מה שייך לכאן (למי שלא קוראת): תפוח על הירוק, ממתק על הכתום
+    const exG = vegModel('apple', binG), exB = vegModel('candy', binB);
+    exG.position.set(0, .8, .42); exB.position.set(0, .8, .42); exG.scale.setScalar(.9); exB.scale.setScalar(.9); // "תמונה" על הסל
+    let left = items.length; counter(items.length, 0);
+    const lblG = mkLbl('☀ כל יום', '#2e7d32', 'כל יום'), lblB = mkLbl('★ לפעמים', '#e65100', 'לפעמים');
+    const pulse = (l, on) => l.classList.toggle('pulse', on);
+    // הסבר מדובר: ירוק = כל יום, כתום = לפעמים; הסל מהבהב בזמן שמדברים עליו
+    speak('כל יום', () => pulse(lblG, false), false, () => pulse(lblG, true));
+    speak('לפעמים', () => pulse(lblB, false), false, () => pulse(lblB, true));
+    w.onTick(() => { [[binG, lblG], [binB, lblB]].forEach(([b, l]) => { const p = w.screenPos(b); l.style.left = p.x + 'px'; l.style.top = (p.y + 34) + 'px' }) });
     items.forEach((s, i) => {
-      const col = i % 5, row = Math.floor(i / 5); // שורה שנייה ברמות גבוהות — שלא ייצאו מהמסך
-      const it = vegModel(s.k, scene); it.position.set(-1.05 + col * .62, .95, 2.75 - row * .42); it.scale.setScalar(1.5); stageObjs.push(it); // מוגדל — קריא בנייד
-      const dr = w.makeDraggable(it, { proxyR: .28, onPick: () => { sfx('tick'); speak(s.n) }, onMiss: () => speak('זה לא המקום. נסי סל אחר') }); // אמירת שם הפריט — זיהוי לילדה שלא קוראת
+      const col = i % 4, row = Math.floor(i / 4); // שורה שנייה ברמות גבוהות — שלא ייצאו מהמסך
+      const it = vegModel(s.k, scene); it.position.set((col - 1.5) * .62, .95, 1.5 - row * .5); it.scale.setScalar(1.25); stageObjs.push(it); // מוגדל — קריא בנייד
+      const dr = w.makeDraggable(it, { proxyR: .28, onPick: () => { sfx('tick'); speak(s.n, null, true) }, onMiss: () => speak('זה לא המקום. נסי סל אחר') }); // אמירת שם הפריט — זיהוי לילדה שלא קוראת
       dr.userData = { good: s.good };
       stageDrags.push(dr);
     });
@@ -338,7 +407,7 @@ function startChef3D(root) {
         accepts: () => true,
         onDrop: (d) => {
           if (d.userData.good === isGood) {
-            left--; sfx('good'); speak('נכון!');
+            left--; counterSet(items.length - left); sfx('good'); speak('נכון!');
             d.grp.position.set(0, 0, 0); d.grp.scale.setScalar(.01); d.active = false;
             if (left <= 0) {
               speak('מיון יפה! אוכל של כל יום נותן כוח');
@@ -358,8 +427,14 @@ function startChef3D(root) {
     const p = w.getProgress('chef3d') || { visits: 0, stars: 0 };
     p.visits++; p.stars++;
     w.saveProgress('chef3d', p);
-    w.banner('כל הכבוד! סיימת!', null);
-    w.endPanel('הלקוחה מאושרת! את שפית אלופה!', 'שחקי שוב', () => location.reload());
+    banner('כל הכבוד! סיימת!', null);
+    const ep = w.endPanel('הלקוחה מאושרת! את שפית אלופה!', 'שחקי שוב', () => {
+      ep.remove(); cust.position.y = 0;
+      dish = DISHES[Math.floor(Math.random() * DISHES.length)];
+      const pr = w.getProgress('chef3d') || { visits: 0, stars: 0 };
+      freestyle = lvl >= 2 && (pr.visits % 2 === 1);
+      w.progressInit(6); setStage(0);
+    });
     speak('הלקוחה מאושרת! את שפית אלופה!');
   }
 
@@ -371,7 +446,7 @@ function startChef3D(root) {
   origOnTick(pump);
 
   setStage(0);
-  w.getStage = () => stage;
+  w.getStage = () => stage; w._setStage = setStage;
   w.STAGES = STAGES;
   w._dishId = dish.id; // debug ל-e2e
   return w.dispose.bind(w);
