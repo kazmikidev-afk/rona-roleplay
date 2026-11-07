@@ -103,8 +103,18 @@ function startChef3D(root) {
   const dish = DISHES[Math.floor(Math.random() * DISHES.length)];
   w.progressInit(6);
 
+  const CAMS = [ // מוקד מצלמה לכל שלב (קרוב לאזור הפעולה — קריטי בנייד)
+    { p: [-1.0, 2.3, 5.8], l: [-1.8, 1.2, 0.8] },  // recipe: דוכן המנות
+    { p: [0, 2.6, 6.2],    l: [0, 1.0, 1.6] },     // gather: מדף+סל
+    { p: [-0.9, 2.4, 5.4], l: [-1.1, 0.9, 2.0] },  // chop: קרש
+    { p: [0, 2.9, 4.4],    l: [0, 1.1, -3.0] },    // steps: דלפק אחורי
+    { p: [1.6, 2.5, 5.6],  l: [3.2, 1.2, 0.4] },   // serve: שולחן לקוח
+    { p: [0, 2.6, 6.6],    l: [0, 1.0, 2.4] },     // sort: סלים
+    { p: [0, 2.5, 6.4],    l: [0, 1.3, 0] }        // done: כללי
+  ];
   function setStage(i) {
     stage = i;
+    const c = CAMS[i]; if (c) w.flyTo(c.p[0], c.p[1], c.p[2], c.l[0], c.l[1], c.l[2]);
     ticks.length = 0;
     [stageRecipe, stageGather, stageChop, stageSteps, stageServe, stageSort, stageDone][i]();
   }

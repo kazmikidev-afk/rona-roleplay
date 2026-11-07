@@ -250,12 +250,24 @@ function startWorld3D(root, opts) {
   const onRes = () => { renderer.setSize(W(), H()); fitCam(); camera.position.copy(camBase); camera.lookAt(camLook) };
   addEventListener('resize', onRes);
 
+  // מוקד מצלמה לפי שלב (תבנית ה-fixer): מעבר חלק למיקום/מבט
+  const flyT = { p: null, l: null };
+  function flyTo(px, py, pz, lx, ly, lz) {
+    flyT.p = new THREE.Vector3(px, py, pz); flyT.l = new THREE.Vector3(lx, ly, lz);
+  }
+  onTick(() => {
+    if (!flyT.p) return;
+    camera.position.lerp(flyT.p, .08);
+    camLook.lerp(flyT.l, .08);
+    camera.lookAt(camLook);
+  });
+
   const api = {
     THREE, scene, camera, renderer, root, hud, SVG,
     mat, box, ball, cyl, group, noRay, buildRoom,
     banner, progressInit, progressStep, endPanel,
     makeDraggable, addDropTarget, setActiveTool, registerRub, screenPos, onTick, getProgress, saveProgress,
-    camBase, camLook, _drags: draggables, _tgts: targets, _rubs: rubs,
+    flyTo, camBase, camLook, _drags: draggables, _tgts: targets, _rubs: rubs,
     dispose() { alive = false; removeEventListener('resize', onRes); renderer.dispose(); root.innerHTML = '' }
   };
   root._world3d = api; // debug handle לבדיקות e2e
