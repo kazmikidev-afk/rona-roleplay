@@ -20,7 +20,7 @@ function startShop3D(root) {
   w.box(.15, 2.1, .9, '#6d4c41', -3.2, 1.05, -3.3);
   w.box(.15, 2.1, .9, '#6d4c41', 3.2, 1.05, -3.3);
   // מקרר (למוצרי חלב/משקאות)
-  const fridgeG = w.group(-1.22, 0, 1.2);
+  const fridgeG = w.group(-1.6, 0, 0.9); fridgeG.scale.setScalar(.75); // מכווץ ומוסט — לא מסתיר פריטי מדף (פגם QA: תות מוסתר)
   w.box(1.5, 2.2, 1, '#e3f2fd', 0, 1.1, 0, fridgeG);
   w.box(1.54, .05, 1.04, '#b0bec5', 0, 1.15, 0, fridgeG);
   // דלפק קופה + קופה
@@ -42,7 +42,7 @@ function startShop3D(root) {
   // הלקוחה — דמות מסתובבת בין ביקורים (צבע משתנה)
   const CUST_COLORS = ['#b57edc', '#f4a460', '#90caf9', '#a5d6a7', '#f48fb1', '#ffe082'];
   const custColor = CUST_COLORS[prog.visits % CUST_COLORS.length];
-  const cust = w.group(1.55, 0, -.9); // גוף הלקוחה נחתך בנייד גם כשהטבעת בפריים
+  const cust = w.group(1.35, 0, -.9); // גוף הלקוחה נחתך בנייד גם כשהטבעת בפריים
   w.ball(.55, custColor, 0, .95, 0, cust, 1, 1.15, 1);
   w.ball(.42, custColor, 0, 1.85, 0, cust);
   w.ball(.13, custColor, -.3, 2.2, 0, cust); w.ball(.13, custColor, .3, 2.2, 0, cust);
@@ -224,7 +224,7 @@ function startShop3D(root) {
       return it;
     });
     // שורה אחת של 5 + גלילה לשורה מתחת הרצפה = פריט מחוץ למסך (תקלה אמיתית ברמה 4 עם 6 פריטים)
-    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set((col - 1) * .85, .5 + row * .7, 2.2) });
+    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set((col - 1) * .85, .55 + row * .7, 2.8) }); // לפני העגלה/שקית - לא בתוכן (פגם QA: הסתרה)
     let left = items.length;
     const catTargets = [[shelfGreen, 'veg'], [fridgeG, 'cool']];
     if (withBakery) catTargets.push([shelfBakery, 'bakery']);
@@ -262,7 +262,7 @@ function startShop3D(root) {
       stageDrags.push(dr);
       return it;
     });
-    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set(.3 + (col - 1) * .8, .55 + row * .7, 2.15) }); // שתי שורות גלויות, מיושר לשקית
+    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set(.45 + (col - 1) * .72, .55 + row * .7, 2.15) }); // שתי שורות גלויות, מיושר לשקית
     let got = 0;
     const tgt = w.addDropTarget(bag, {
       radiusPx: 150, ringR: .5, ringPos: new THREE.Vector3(0, .75, 0), ringRot: { x: Math.PI / 2 },
