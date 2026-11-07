@@ -193,7 +193,7 @@ function runVisit(role,lvl,ci){
    const line=newBadge?`השלמת את רמה ${lvl} וקיבלת ${role.badge}!`:`עזרת ל${ch.c[1]}! כל הכבוד!`;
    cc.appendChild(el('p','screen-sub',line));speak(line);sfx(newBadge?'applause':'sparkle');confettiBurst(newBadge?18:10);
    if(newBadge&&lvl<3)cc.appendChild(el('p','screen-sub',`רמה ${lvl+1} נפתחה!`));
-   const b=el('button','big-btn','המשך ▶');b.onclick=()=>{sfx('tick');navStack.length=baseDepth;show._cur=null;show(levelScreen.bind(null,role,lvl),role.name+' · רמה '+lvl)};cc.appendChild(b);
+   const b=el('button','big-btn','המשך ▶');const shownAt=Date.now();b.onclick=()=>{if(Date.now()-shownAt<800)return;sfx('tick');navStack.length=baseDepth;show._cur=null;show(levelScreen.bind(null,role,lvl),role.name+' · רמה '+lvl)};cc.appendChild(b);
   },visitTitle,false)};
  show(intro,visitTitle);
 }
