@@ -16,7 +16,7 @@ function bridge3DAward(roleId){
  STATE.done[roleId]=STATE.done[roleId]||{};STATE.done[roleId][lvl]=STATE.done[roleId][lvl]||{};
  const arr=role.levels[lvl-1];const ci=arr.findIndex((_,i)=>!STATE.done[roleId][lvl][i]);
  if(ci<0){saveState();return {lvl,already:true}}
- STATE.done[roleId][lvl][ci]=true;
+ STATE.done[roleId][lvl][ci]='3d'; // שיוך גלוי: הושלם בביקור תלת-ממדי, לא במשחק קלאסי
  const lvlDone=arr.every((_,i)=>STATE.done[roleId][lvl][i]);
  let newBadge=false,newLevel=false;
  if(lvlDone&&!(STATE.badges[roleId]||[])[lvl-1]){STATE.badges[roleId]=STATE.badges[roleId]||[];STATE.badges[roleId][lvl-1]=true;newBadge=true;
@@ -153,7 +153,8 @@ function roleScreen(role,sc){
  sc.appendChild(el('p','screen-sub',`ברמה ${unl}: עזרת ל-${doneCount} מתוך ${role.levels[unl-1].length} דמויות`));
  const chars=el('div','char-row');
  role.levels[unl-1].forEach((ch,i)=>{const d=done[i];
-  const b=el('button','char-card',`${d?'<span class="done-mark">✔️</span>':''}<div class="ce">${ch.c[0]}</div><div class="cn">${ch.c[1]}</div>`);
+  const mark=d?`<span class="done-mark">✔️</span>${d==='3d'?'<span class="done-3d">3D</span>':''}`:'';
+  const b=el('button','char-card',`${mark}<div class="ce">${ch.c[0]}</div><div class="cn">${ch.c[1]}</div>`);
   b.onclick=()=>{sfx('tick');runVisit(role,unl,i)};chars.appendChild(b)});
  sc.appendChild(chars);
 }

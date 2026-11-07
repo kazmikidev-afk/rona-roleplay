@@ -303,15 +303,16 @@ function startShop3D(root) {
   }
 
   // ---------- שלב 4: סיום ----------
+  let awardedThisSession = false; // פרס אחד לביקור — אידמפוטנטי מול קריאה כפולה
   function stageDone() {
     cleanupStage();
     const p = w.getProgress('shop3d') || { visits: 0, stars: 0 };
-    p.visits++; p.stars++;
-    w.saveProgress('shop3d', p);
-    // גשר התקדמות: הביקור נספר כלקוח שהושלם ברמה הנוכחית (אותו מבנה כמו ה-2D)
-    const aw = (typeof bridge3DAward === 'function') ? bridge3DAward('shop') : null;
+    if (!awardedThisSession) { p.visits++; p.stars++; w.saveProgress('shop3d', p) }
+    // גשר התקדמות: הביקור נספר כהשלמת לקוח אחד ברמה הנוכחית, עם שיוך '3d' גלוי
+    const aw = (!awardedThisSession && typeof bridge3DAward === 'function') ? bridge3DAward('shop') : null;
+    awardedThisSession = true;
     const badgeLine = aw && aw.newBadge;
-    w.banner(badgeLine ? '🏅 תג חדש!' : 'כל הכבוד! סיימת!', null);
+    w.banner(badgeLine ? 'תג חדש!' : 'כל הכבוד! סיימת!', null);
     w.endPanel(badgeLine ? 'קיבלת תג מוכרת!' : 'הלקוחה מאושרת! את מוכרת אלופה!', 'שחקי שוב', () => location.reload());
     if (badgeLine) speak('השלמת את רמה ' + aw.lvl + ' וקיבלת תג מוכרת!', () => { if (aw.newLevel) speak('רמה ' + (aw.lvl + 1) + ' נפתחה!') });
     else speak('הלקוחה מאושרת! את מוכרת אלופה!');
