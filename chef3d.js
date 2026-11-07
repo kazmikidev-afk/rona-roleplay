@@ -35,7 +35,7 @@ function startChef3D(root) {
   const board = w.group(-1.2, .93, 2.1);
   w.box(1.1, .05, .8, '#d7a86e', 0, 0, 0, board);
   // סל איסוף
-  const basket = w.group(1.4, .95, 2.1);
+  const basket = w.group(.9, .95, 2.1); // קרוב למרכז — שלא ייחתך בקצה הנייד
   w.cyl(.42, .32, .35, '#c98d4b', 0, .17, 0, basket);
   w.cyl(.36, .36, .04, '#8d5a2b', 0, .3, 0, basket);
   // חלון הזמנות
@@ -109,8 +109,8 @@ function startChef3D(root) {
     { p: [-1.3, 2.5, 5.6], l: [-2.1, 1.5, 0.2] },  // recipe: דוכן+חלון הזמנות
     { p: [0, 2.5, 6.0],    l: [0, 1.1, 1.5] },     // gather: מדף+סל
     { p: [-0.9, 2.4, 5.4], l: [-1.1, 0.9, 2.0] },  // chop: קרש
-    { p: [0, 2.9, 4.2],    l: [0, 1.1, -3.2] },    // steps: דלפק אחורי
-    { p: [1.6, 2.5, 5.6],  l: [3.2, 1.2, 0.4] },   // serve: שולחן לקוח
+    { p: [0, 3.5, 6.4],    l: [0, 1.0, -2.8] },    // steps: קערה קדמית+תחנות אחוריות בפריים
+    { p: [1.3, 2.6, 6.2],  l: [1.9, 1.0, 1.5] },   // serve: צלחת+שולחן לקוח בפריים
     { p: [0, 2.6, 6.2],    l: [0, 1.0, 2.3] },     // sort: סלים
     { p: [0, 2.5, 6.4],    l: [0, 1.3, 0] }        // done: כללי
   ];
@@ -127,7 +127,7 @@ function startChef3D(root) {
   function cleanupStage() {
     clearGroup(stageObjs);
     stageDrags.forEach(d => { const i = draggables.indexOf(d); if (i >= 0) draggables.splice(i, 1) });
-    stageTargets.forEach(t => { const i = targets.indexOf(t); if (i >= 0) targets.splice(i, 1) });
+    stageTargets.forEach(t => { if (t.ring) t.ring.visible = false; const i = targets.indexOf(t); if (i >= 0) targets.splice(i, 1) }); // מסתיר טבעות ישנות — לא להשאיר רמזי רפאים
     stageDrags = []; stageTargets = [];
   }
   const draggables = w._drags, targets = w._tgts;
@@ -142,7 +142,7 @@ function startChef3D(root) {
     w.box(2.6, .8, .9, '#8d6e63', 0, .4, 0, stand);
     w.box(2.8, .1, 1, '#fdf6ee', 0, .85, 0, stand);
     DISHES.forEach((d, i) => {
-      const plate = w.group(-.95 + i * .63, .95, 0, stand);
+      const plate = w.group(-.78 + i * .52, .95, 0, stand); // צפוף יותר — שלא ייחתך בנייד צר
       w.cyl(.26, .2, .05, '#ffffff', 0, 0, 0, plate);
       vegModel(d.id, plate);
       const dr = w.makeDraggable(plate, {
@@ -183,7 +183,7 @@ function startChef3D(root) {
     let got = 0;
     items.forEach((k, i) => {
       const row = i < 4 ? 1.35 : .6, col = (i % 4) - 1.5;
-      const it = vegModel(k, shelf); it.position.set(col * 1.15, row, 0);
+      const it = vegModel(k, shelf); it.position.set(col * .85 + .05, row, 0); // מכווץ מהקצוות — מחוות חזרה של אנדרויד
       const needed = need.includes(k);
       const dr = w.makeDraggable(it, {
         proxyR: .3, onPick: () => sfx('tick'),
@@ -289,7 +289,7 @@ function startChef3D(root) {
   function stageServe() {
     cleanupStage();
     w.banner('המנה מוכנה! הגישי ללקוחה', 'קשטי את הצלחת והגישי בחיוך');
-    const plate = w.group(0, .95, 2.1); stageObjs.push(plate);
+    const plate = w.group(1.0, .95, 2.1); stageObjs.push(plate);
     w.cyl(.34, .26, .06, '#ffffff', 0, .03, 0, plate);
     vegModel(dish.id, plate);
     const dr = w.makeDraggable(plate, { proxyR: .4, onPick: () => sfx('tick'), onMiss: () => speak('הלקוחה מחכה ליד השולחן!') });
@@ -317,13 +317,14 @@ function startChef3D(root) {
     const items = [];
     for (let i = 0; i < n / 2; i++) { items.push(goods[i % goods.length]); items.push(bads[i % bads.length]) }
     items.sort(() => Math.random() - .5);
-    const binG = w.group(-1.9, 0, 2.1), binB = w.group(1.9, 0, 2.1);
+    const binG = w.group(-1.15, 0, 2.1), binB = w.group(1.15, 0, 2.1); // בתוך פריים הנייד
     stageObjs.push(binG, binB);
     w.cyl(.45, .35, .5, '#43a047', 0, .95, 0, binG);
     w.cyl(.45, .35, .5, '#ef6c00', 0, .95, 0, binB);
     let left = items.length;
     items.forEach((s, i) => {
-      const it = vegModel(s.k, scene); it.position.set(-1.75 + i * .7, .95, 2.75); stageObjs.push(it);
+      const col = i % 5, row = Math.floor(i / 5); // שורה שנייה ברמות גבוהות — שלא ייצאו מהמסך
+      const it = vegModel(s.k, scene); it.position.set(-1.2 + col * .6, .95, 2.75 - row * .4); stageObjs.push(it);
       const dr = w.makeDraggable(it, { proxyR: .28, onPick: () => sfx('tick'), onMiss: () => speak('זה לא המקום. נסי סל אחר') });
       dr.userData = { good: s.good };
       stageDrags.push(dr);

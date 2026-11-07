@@ -255,9 +255,14 @@ function startWorld3D(root, opts) {
   function flyTo(px, py, pz, lx, ly, lz) {
     flyT.p = new THREE.Vector3(px, py, pz); flyT.l = new THREE.Vector3(lx, ly, lz);
   }
+  const _flyEff = new THREE.Vector3();
   onTick(() => {
     if (!flyT.p) return;
-    camera.position.lerp(flyT.p, .35);
+    // ריווח מצלמה לפי יחס מסך: בנייד צר אותו יעד נראה צר בהרבה -
+    // מרחיקים את המצלמה מנקודת המבט כדי שהעצמים לא ייחתכו בקצוות
+    const a = W() / H(), dolly = a < .75 ? 1.32 : (a < 1.1 ? 1.14 : 1);
+    _flyEff.lerpVectors(flyT.l, flyT.p, dolly);
+    camera.position.lerp(_flyEff, .35);
     camLook.lerp(flyT.l, .35);
     camera.lookAt(camLook);
   });
