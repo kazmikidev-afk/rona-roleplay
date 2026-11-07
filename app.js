@@ -1,6 +1,6 @@
 // עולם התפקידים של רונה — מנוע ראשי
 const LS_KEY='ronaRoleplay.v1';
-let STATE={unlocked:{},done:{},badges:{},choices:{},muted:false};
+let STATE={unlocked:{},done:{},badges:{},choices:{},fresh:{},muted:false};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(LS_KEY));if(s)STATE=Object.assign(STATE,s)}catch(e){}}
 function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(STATE))}catch(e){}}
 loadState();
@@ -83,8 +83,10 @@ function roleScreen(role,sc){
  const unl=STATE.unlocked[role.id]||1;
  const lvlRow=el('div','lvl-row');
  for(let l=1;l<=role.levels.length;l++){const locked=l>unl;
-  const b=el('button','lvl-btn'+(locked?' locked':''),`<span>${locked?'🔒':''} רמה ${l}</span><span>${'⭐'.repeat(l)}</span>`);
+  const isFresh=(STATE.fresh||{})[role.id]===l;
+  const b=el('button','lvl-btn'+(locked?' locked':''),`<span>${locked?'🔒':''} רמה ${l}${isFresh?' ✨':''}</span><span>${'⭐'.repeat(l)}</span>`);
   b.onclick=()=>{if(locked){sfx('oops');speak('קודם משלימים את הרמה הקודמת');toast('משלימים קודם את רמה '+(l-1));return}
+   if(isFresh){delete STATE.fresh[role.id];saveState()}
    sfx('tick');show(levelScreen.bind(null,role,l),role.name+' · רמה '+l)};lvlRow.appendChild(b)}
  sc.appendChild(lvlRow);
  const done=(STATE.done[role.id]||{})[unl]||{};
@@ -108,8 +110,10 @@ function levelScreen(role,lvl,sc){
 }
 
 // --- ביקור אצל דמות ---
-const INSTR={toolpick:'בחרי מברשת ומשחה כדי לנקות את השיניים',brush:'צחצחי במעגלים קטנים עד שהשיניים מנצנצות',patch:'שימי טלאי קסם צבעוני על הנקודה החולה',wobbly:'געי בעדינות בשן המתנדנדת',snacksort:'מייני: מה טוב לשיניים ומה רק קצת?',story:'בחרי איך הסיפור ממשיך',share:'חלקי לכולם שווה בשווה',dayorder:'סדרי את לוח היום של הגן',simon:'חזרי על התנועות של שיר המעבר',gallery:'תלי כל ציור במסגרת המתאימה',find:'מצאי על המדפים את מה שברשימה',count:'ספרי בקול והכניסי לתיק',change:'החזירי ללקוח את העודף הנכון',shelfsort:'סדרי את הסחורה על המדפים הנכונים',dressup:'בחרי תלבושת ותאורה לבמה',picksong:'בחרי איזה שיר נשיר בהופעה',rhythm:'מקישים כשהאור עובר באזור הזהב!',stetho:'שימי את הסטטוסקופ על הלב',bandage:'שימי פלסטר צבעוני על השריטה',temp:'החזיקי את המדחום על המצח',feed:'מה האוכל הנכון בשביל החיה?',furscrub:'הברישי את הפרווה עד שהיא נקייה ומבריקה',recipe:'בחרי מה מכינים היום במטבח',gather:'אספי את המרכיבים מהמדף',steps:'עשי את שלבי ההכנה בסדר הנכון',chop:'קצצי את הירקות לתוך הקערה',serve:'קשטי את הצלחת והגישי בחיוך',foodsort:'מייני: אוכל של כל יום או של פעמים מיוחדות'};
+const INSTR={toolpick:'בחרי מברשת ומשחה כדי לנקות את השיניים',brush:'צחצחי במעגלים קטנים עד שהשיניים מנצנצות',patch:'שימי טלאי קסם צבעוני על הנקודה החולה',wobbly:'געי בעדינות בשן המתנדנדת',snacksort:'מייני: מה טוב לשיניים ומה רק קצת?',story:'בחרי איך הסיפור ממשיך',share:'חלקי לכולם שווה בשווה',dayorder:'סדרי את לוח היום של הגן',simon:'חזרי על התנועות של שיר המעבר',gallery:'תלי כל ציור במסגרת המתאימה',find:'מצאי על המדפים את מה שברשימה',count:'ספרי בקול והכניסי לתיק',change:'החזירי ללקוח את העודף הנכון',shelfsort:'סדרי את הסחורה על המדפים הנכונים',dressup:'בחרי תלבושת ותאורה לבמה',picksong:'בחרי איזה שיר נשיר בהופעה',rhythm:'מקישים כשהאור עובר באזור הזהב!',stetho:'שימי את הסטטוסקופ על הלב',bandage:'שימי פלסטר צבעוני על השריטה',temp:'החזיקי את המדחום על המצח',feed:'מה האוכל הנכון בשביל החיה?',furscrub:'הברישי את הפרווה עד שהיא נקייה ומבריקה',recipe:'בחרי מה מכינים היום במטבח',gather:'אספי את המרכיבים מהמדף',steps:'עשי את שלבי ההכנה בסדר הנכון',chop:'קצצי את הירקות לתוך הקערה',serve:'קשטי את הצלחת והגישי בחיוך',foodsort:'מייני: אוכל של כל יום או של פעמים מיוחדות',
+teethcount:'ספרי בקול את השיניים הגדולות!',diagnose:'מה עושים קודם בבדיקה? סדרי את השלבים',duet:'שירו צמד! מקישים כשהאור עובר באזור הזהב!',bigchange:'הפעם משלמים עם 20 מטבעות! החזירי את העודף הנכון',freestyle:'בני מנה משלך: בחרי אוכל ושתייה'};
 
+const KID='רונה';
 const DISH_STEPS={salad:[{e:'🚿',n:'שוטפים'},{e:'🔪',n:'קוצצים'},{e:'🥣',n:'מערבבים'},{e:'🍽️',n:'מגישים'}],
 sandwich:[{e:'🍞',n:'לוקחים לחם'},{e:'🥑',n:'שמים מילוי'},{e:'🥪',n:'סוגרים את הכריך'},{e:'😋',n:'מגישים'}],
 shake:[{e:'🍌',n:'שמים פירות'},{e:'💧',n:'מוסיפים מים'},{e:'🌀',n:'טוחנים'},{e:'🥤',n:'מוזגים'}],
@@ -129,7 +133,14 @@ function paramsFor(type,lvl,ctx){
    return{bins:[{id:'good',e:'😁',n:'טוב לשיניים'},{id:'bad',e:'😬',n:'רק קצת'}],items:goods.concat(bads),hint:'פירות וירקות טובים לשיניים',doneSay:'מיון מושלם! השיניים שמחות'}}
   case 'foodsort':{const n=[0,4,6,8][lvl];const goods=sample(['🍎','🥪','🍐','🥚','🥕','🍌'],n/2).map(e=>({e,bin:'every'})),bads=sample(['🍕','🍰','🥤','🍟','🍩','🍬'],n/2).map(e=>({e,bin:'some'}));
    return{bins:[{id:'every',e:'💪',n:'כל יום'},{id:'some',e:'🎉',n:'לפעמים'}],items:goods.concat(bads),hint:'אוכל בריא אוכלים כל יום',doneSay:'מיון יפה! אוכל של כל יום נותן כוח'}}
-  case 'story':return{points:lvl};
+  case 'story':return{points:lvl,story:sample(STORY_SETS,1)[0]};
+  case 'teethcount':return{n:[0,4,6,7][lvl],item:'🦷',bag:'😁',doneSay:'ספרת את כל השיניים!'};
+  case 'diagnose':return{cards:DIAG_STEPS,hint:'מה עושים קודם בבדיקה?',doneSay:'סדר בדיקה נכון! יודעים מה לעשות'};
+  case 'bigchange':return{price:[0,12,14,15][lvl],paid:20};
+  case 'freestyle':return{groups:[{key:'dish',q:'מה מכינים?',opts:CHEF_DISHES.map(d=>({e:d.e,n:d.n,v:d.id}))},
+   {key:'drink',q:'ומה שותים?',opts:DRINKS.map(d=>({e:d.e,n:d.n,v:d.e}))}]};
+  case 'duet':{const song=SONGS.find(s=>s.id===STATE.choices.song);
+   return{beats:[0,4,6,8][lvl],speed:2.2+lvl*.6,stage:{costume:STATE.choices.costume,lights:STATE.choices.lights,song:song?song.n:null,partner:sample(['🐦','🐊','🐒','🐘'],1)[0]}}}
   case 'share':return{total:[0,4,6,8][lvl],kids:1+lvl,item:'🖍️',kidEmojis:['👧','👦','🧒','👧🏽']};
   case 'dayorder':return{cards:DAY_CARDS.slice(0,2+lvl),hint:'מה עושים קודם בבוקר?',doneSay:'סדר מושלם! ככה נראה היום בגן'};
   case 'simon':return{seq:sample(SIMON_MOVES,4).slice(0,1+lvl)};
@@ -146,7 +157,7 @@ function paramsFor(type,lvl,ctx){
   case 'shelfsort':{const nb=Math.min(1+lvl,3);const cats=SHOP_CATS.slice(0,nb);
    const items=[];cats.forEach(c=>sample(c.items,[0,2,2,3][lvl]).forEach(e=>items.push({e,bin:c.id})));
    return{bins:cats.map(c=>({id:c.id,e:c.e,n:c.n})),items,doneSay:'המדפים מסודרים! החנות נראית נהדר'}}
-  case 'dressup':return{groups:[{key:'costume',q:'איזו תלבושת לבמה?',opts:COSTUMES.map(c=>({e:c,v:c}))},
+  case 'dressup':return{groups:[{key:'costume',q:'איזו תלבושת לבמה?',opts:COSTUMES.map(c=>({e:c.e,n:c.n,v:c.e}))},
    {key:'lights',q:'איזה צבע תאורה?',opts:LIGHTS.map(c=>({c:c.c,n:c.n,v:c.c}))}]};
   case 'picksong':return{groups:[{key:'song',q:'איזה שיר נשיר?',opts:SONGS.map(s=>({e:s.e,n:s.n,v:s.id}))}]};
   case 'steps':{const dish=CHEF_DISHES.find(d=>d.id===STATE.choices.dish)||CHEF_DISHES[0];
@@ -201,15 +212,20 @@ function runVisit(role,lvl,ci){
   saveState();
   show(sc=>{const cc=el('center-col'.replace('$',''),'center-col');sc.appendChild(cc);
    cc.appendChild(el('h1','screen-title',newBadge?'🏅 תג חדש!':'⭐ כל הכבוד!'));
-   cc.appendChild(el('div','reward-stars',newBadge?'🏅':'⭐'));
-   const line=newBadge?`השלמת את רמה ${lvl} וקיבלת ${role.badge}!`:`עזרת ל${ch.c[1]}! כל הכבוד!`;
+   cc.appendChild(el('div','reward-stars',newBadge?role.emoji:'⭐'));
+   const totalBadges=Object.values(STATE.badges).flat().filter(Boolean).length;
+  const allBadges=ROLES.reduce((s,r)=>s+r.levels.length,0);
+  let line=newBadge?`השלמת את רמה ${lvl} וקיבלת ${role.badge}!`:`עזרת ל${ch.c[1]}! כל הכבוד ${KID}!`;
+  if(newBadge&&totalBadges===allBadges)line=`כל התגים באוסף! ${KID}, את אלופת התפקידים!`;
+  else if(newBadge&&totalBadges%6===0)line+=` יש לך כבר ${totalBadges} תגים!`;
    cc.appendChild(el('p','screen-sub',line));sfx(newBadge?'applause':'sparkle');confettiBurst(newBadge?18:10);
    if(newBadge&&lvl<role.levels.length){cc.appendChild(el('p','screen-sub',`רמה ${lvl+1} נפתחה!`));speak(line+` רמה ${lvl+1} נפתחה!`)}else speak(line);
+   if(newBadge&&lvl<role.levels.length)STATE.fresh[role.id]=lvl+1;
    const b=el('button','big-btn','המשך ▶');const shownAt=Date.now();b.onclick=()=>{if(Date.now()-shownAt<800)return;sfx('tick');navStack.length=baseDepth;show._cur=null;show(levelScreen.bind(null,role,lvl),role.name+' · רמה '+lvl)};cc.appendChild(b);
   },visitTitle,false)};
  show(intro,visitTitle);
 }
-function engineType(t){return({toolpick:'pick',feed:'pick',brush:'scrub',furscrub:'scrub',patch:'dragOne',bandage:'dragOne',stetho:'dragOne',snacksort:'sort',shelfsort:'sort',foodsort:'sort',gallery:'sort',count:'countTap',dayorder:'order',steps:'order',simon:'simon',story:'story',dressup:'choiceSave',picksong:'choiceSave',recipe:'choiceSave',serve:'serve',rhythm:'rhythm',change:'change',share:'share',temp:'temp',wobbly:'wobbly',chop:'chop',find:'find',gather:'find'})[t]||t}
+function engineType(t){return({toolpick:'pick',feed:'pick',brush:'scrub',furscrub:'scrub',patch:'dragOne',bandage:'dragOne',stetho:'dragOne',snacksort:'sort',shelfsort:'sort',foodsort:'sort',gallery:'sort',count:'countTap',dayorder:'order',steps:'order',simon:'simon',story:'story',dressup:'choiceSave',picksong:'choiceSave',recipe:'choiceSave',serve:'serve',rhythm:'rhythm',change:'change',share:'share',temp:'temp',wobbly:'wobbly',chop:'chop',find:'find',gather:'find',teethcount:'countTap',diagnose:'order',duet:'rhythm',bigchange:'change',freestyle:'choiceSave'})[t]||t}
 
 // --- תגים ---
 function badgesScreen(sc){
@@ -217,11 +233,11 @@ function badgesScreen(sc){
  const grid=el('div','badge-grid');
  ROLES.forEach(r=>{const b=(STATE.badges[r.id]||[]);
   for(let l=0;l<r.levels.length;l++){const got=b[l];
-   grid.appendChild(el('div','badge-cell',`<div class="be${got?'':' locked'}">🏅</div><div class="bn">${r.emoji} ${r.name}<br>רמה ${l+1}</div>`))}});
+   grid.appendChild(el('div','badge-cell',`<div class="be${got?'':' locked'}">${got?r.emoji:'🏅'}</div><div class="bn">${r.emoji} ${r.name}<br>רמה ${l+1}</div>`))}});
  sc.appendChild(grid);
  const cc=el('div','row-btns');const h=el('button','pill-btn','🏠 לבית');h.onclick=()=>show(homeScreen,'עולם התפקידים של רונה');cc.appendChild(h);sc.appendChild(cc);
  const total=Object.values(STATE.badges).flat().filter(Boolean).length;
- speak(total?`יש לך ${total} תגים! כל הכבוד`:'עוד אין תגים. בואי נשחק ונרוויח!')}
+ speak(total?`יש לך ${total} תגים! כל הכבוד ${KID}`:'עוד אין תגים. בואי נשחק ונרוויח!')}
 
 // --- פינת הורים ---
 // שער הורים: שאלת חיבור פשוטה למבוגר, בלי הקראה
@@ -274,7 +290,7 @@ function exportState(){try{const blob=new Blob([JSON.stringify(STATE,null,1)],{t
  setTimeout(()=>URL.revokeObjectURL(a.href),4000);toast('הגיבוי ירד למכשיר')}catch(e){toast('הייצוא לא הצליח')}}
 function importState(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();
  r.onload=()=>{try{const s=JSON.parse(r.result);if(!s||typeof s!=='object')throw 0;
-  STATE=Object.assign({unlocked:{},done:{},badges:{},choices:{},muted:false},s);saveState();toast('ההתקדמות שוחזרה!');show(homeScreen,'עולם התפקידים של רונה')}
+  STATE=Object.assign({unlocked:{},done:{},badges:{},choices:{},fresh:{},muted:false},s);saveState();toast('ההתקדמות שוחזרה!');show(homeScreen,'עולם התפקידים של רונה')}
  catch(e){toast('הקובץ לא תקין')}};r.readAsText(f)}
 
 // --- הוספה למסך הבית ---

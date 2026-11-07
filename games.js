@@ -10,10 +10,11 @@ pick:{run:(area,p,done)=>{done=once(done);let left=p.need;const row=el('div','op
  p.options.forEach(o=>{const b=el('button','opt-btn',o.e+(o.n?`<small>${o.n}</small>`:''));row.appendChild(b);
   b.onclick=()=>{if(o.good){b.classList.add('picked');b.disabled=true;sfx('good');left--;if(left<=0){speak(p.doneSay||'יופי! בחרת נכון',done)}else speak('נכון!')}else{sfx('oops');b.classList.add('hint');sayHint(p.hint||'נסי שוב');setTimeout(()=>b.classList.remove('hint'),1400)}}})}},
 // שפשוף/צחצוח עם גרירת אצבע
-scrub:{run:(area,p,done)=>{done=once(done);let prog=0;const goal=p.goal;let fin=false;
+scrub:{run:(area,p,done)=>{done=once(done);let prog=0;const goal=Math.min(p.goal,36);let fin=false;let half=false;
  const tgt=el('div','sparkle-goal',p.emoji);tgt.style.filter='grayscale(.8) brightness(.85)';area.appendChild(tgt);
  const track=el('div','progress-track'),fill=el('div','progress-fill');track.appendChild(fill);area.appendChild(track);
  let lastN=0;const on=ev=>{if(fin)return;ev.preventDefault();prog=Math.min(goal,prog+1);const pc=prog/goal;fill.style.width=(pc*100)+'%';
+  if(!half&&pc>=.5){half=true;speak('חצי דרך! ממשיכים!')}
   const n=Math.floor(pc*p.countTo);if(n>lastN){lastN=n;speak(''+n);sfx('tick')}
   tgt.style.filter=`grayscale(${.8*(1-pc)}) brightness(${.85+.35*pc})`;
   if(prog>=goal){fin=true;tgt.style.transform='scale(1.15)';tgt.textContent=p.doneEmoji;sfx('sparkle');confettiBurst(8);speak(p.doneSay||'כל הכבוד! סיימת!',done)}};
@@ -72,14 +73,14 @@ simon:{run:(area,p,done)=>{const seq=p.seq;const btns=SIMON_MOVES.map(m=>{const 
   if(m===seq[idx]){idx++;if(idx>=seq.length){phase='done';sfx('good');confettiBurst(6);speak('כל הכבוד! זכרת את כל התנועות!',done)}}
   else{phase='wait';sfx('oops');sayHint('כמעט! נראה שוב');setTimeout(show,1300)}});
  setTimeout(show,600)}},
-// סיפור עם בחירות
-story:{run:(area,p,done)=>{done=once(done);let i=0;
+// סיפור עם בחירות (סיפורים מתחלפים)
+story:{run:(area,p,done)=>{done=once(done);let i=0;const S=p.story||STORIES;
  const pic=el('div','story-pic','📖');area.appendChild(pic);
  const txt=el('div','story-text');area.appendChild(txt);const col=el('div','choice-col');area.appendChild(col);
- const step=()=>{col.innerHTML='';const s=STORIES[i];pic.textContent=s.e||'📖';txt.textContent=s.t;speak(s.t);
+ const step=()=>{col.innerHTML='';const s=S[Math.min(i,S.length-1)];pic.textContent=s.e||'📖';txt.textContent=s.t;speak(s.t);
   s.o.forEach(o=>{const b=el('button','choice-btn',o[0]+' '+o[1]);col.appendChild(b);
    b.onclick=()=>{col.innerHTML='';pic.textContent=o[0];txt.textContent=o[2];sfx('good');i++;
-    if(i>=p.points||i>=STORIES.length){confettiBurst(6);speak(o[2],done)}else speak(o[2],step)}})};
+    if(i>=p.points||i>=S.length){confettiBurst(6);speak(o[2],done)}else speak(o[2],step)}})};
  step()}},
 // בחירה שנשמרת (תלבושת, תאורה, שיר, מתכון, פלסטר, טלאי)
 choiceSave:{run:(area,p,done)=>{done=once(done);const groups=p.groups;let gi=0;const picked={};let fin=false;
@@ -91,8 +92,8 @@ choiceSave:{run:(area,p,done)=>{done=once(done);const groups=p.groups;let gi=0;c
  render()}},
 // קצב: מקש בזמן שהנקודה באזור
 rhythm:{run:(area,p,done)=>{done=once(done);const beats=p.beats;let cur=0,hits=0;
- if(p.stage&&(p.stage.costume||p.stage.song||p.stage.lights)){const st=el('div','stage-view');
-  st.innerHTML=`<div class="stage-costume">${p.stage.costume||'🎤'}</div>${p.stage.song?`<div class="stage-song">🎵 ${p.stage.song}</div>`:''}`;
+ if(p.stage&&(p.stage.costume||p.stage.song||p.stage.lights||p.stage.partner)){const st=el('div','stage-view');
+  st.innerHTML=`<div class="stage-costume">${p.stage.costume||'🎤'}</div>${p.stage.partner?`<div class="stage-costume">${p.stage.partner}</div>`:''}${p.stage.song?`<div class="stage-song">🎵 ${p.stage.song}</div>`:''}`;
   if(p.stage.lights)st.style.background=`linear-gradient(180deg,${p.stage.lights}80,rgba(255,255,255,0))`;area.appendChild(st)}
  const meter=el('div','applause-meter'),mfill=el('div','applause-fill');meter.appendChild(mfill);area.appendChild(meter);
  const hitTxt=el('div','rhythm-hit-text','');area.appendChild(hitTxt);
@@ -122,12 +123,12 @@ serve:{run:(area,p,done)=>{done=once(done);let fin=false;
    [...row.children].forEach(x=>x.disabled=true);b.classList.add('picked');
    sfx('good');confettiBurst(8);speak('מנה מהממת! מגישים בחיוך',done)}})}},
 // עודף: הלקוח שילם 10, צריך להחזיר
-change:{run:(area,p,done)=>{done=once(done);const need=10-p.price;let given=0;
- area.appendChild(el('div','price-tag',`מחיר: ${p.price} 🪙 · שילמו: 10 🪙`));
+change:{run:(area,p,done)=>{done=once(done);const paid=p.paid||10;const need=paid-p.price;let given=0;
+ area.appendChild(el('div','price-tag',`מחיר: ${p.price} 🪙 · שילמו: ${paid} 🪙`));
  const hand=el('div','drop-target','🖐️');area.appendChild(hand);
  const cnt=el('div','price-tag','החזרת: 0');area.appendChild(cnt);
  const row=el('div','coin-row');area.appendChild(row);
- for(let i=0;i<10;i++){const b=el('button','coin','🪙');row.appendChild(b);
+ for(let i=0;i<paid;i++){const b=el('button','coin','🪙');row.appendChild(b);
   b.onclick=()=>{if(b.classList.contains('given'))return;given++;
    if(given>need){sfx('oops');sayHint('זה יותר מדי! נסי לספור שוב');given--;return}
    b.classList.add('given');cnt.textContent='החזרת: '+given;speak(''+given);sfx('tick');
