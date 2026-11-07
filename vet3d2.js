@@ -182,12 +182,12 @@ function startVet3D2(root) {
     speak('רקס הכלבלב נשרט במשחק. קודם נלטף אותו כדי שירגע');
     // רמז חזותי: טבעת כתומה עבה פועמת באזור הליטוף (תבנית התג של shop)
     const cue = new THREE.Mesh(new THREE.TorusGeometry(.22, .07, 12, 48), new THREE.MeshBasicMaterial({ color: '#ff6d00' }));
-    cue.position.copy(furAt()); cue.position.y += .1; cue.position.z += .34; // מול הגוף — לא מוסתרת מאחורי החיה
+    cue.position.copy(furAt()); cue.position.y += .05; cue.position.z += .15; // על אזור הליטוף האמיתי — מוצר: הטבעת על הראש רמזה לשפשף במקום הלא נכון
     scene.add(cue); stageObjs.push(cue);
     w.onTick(() => { if (!cue.parent) return; const s = 1 + Math.sin(performance.now() / 300) * .12; cue.scale.set(s, s, s) });
     const proxy = w.group(0, 0, 0); proxy.position.copy(furAt()); stageObjs.push(proxy);
     const rub = w.registerRub(proxy, {
-      needed: 600, radiusPx: 170,
+      needed: 600, radiusPx: 250, // רחב — ליטוף בכל מקום על החיה (ראש/גוף) מתקדם, מותאם לרמז החזותי
       onProgress: (k) => { if (Math.random() < .12) sfx('tick') },
       onDone: () => { sfx('sparkle'); speak('שלוש! רקס רגוע ומוכן לבדיקה'); nextStage() }
     });
@@ -298,13 +298,15 @@ function startVet3D2(root) {
   // ---------- feed: האכלה בקערה ----------
   function stageFeed(diff) {
     cleanupStage(); fly('bowl');
+    const mat = w.box(.72, .03, .5, '#00796b', .7, 1.0, .88); // מפית כהה מנוגדת מתחת לשורת האוכל — מוצר: עצם בהירה על שולחן בהיר לא נקראת
+    stageObjs.push(mat);
     w.banner('מה אוכלים?', null);
     speak(A.food === 'bone' ? 'רקס רעב אחרי הטיפול! גררי את העצם אל הקערה' : 'היא רעבה אחרי הטיפול! גררי את האוכל אל הקערה');
     const n = Math.min(diff, 3);
     let left = n;
     for (let i = 0; i < n; i++) {
       const f = foodModel(A.food);
-      f.scale.setScalar(1.5); // קריאות — מוצר: האוכל זעיר וחיוור
+      f.scale.setScalar(2.2); // קריאות — מוצר: גם ×1.5 נקרא ~25px בדסקטופ אמיתי
       f.position.set(0.5 + i * .2, 1.05, 0.88); // שורה מרווחת — טור z קרס חזותית לפריט אחד
       scene.add(f); stageObjs.push(f);
       const dr = w.makeDraggable(f, { proxyR: .3, onPick: () => { sfx('tick') } });
