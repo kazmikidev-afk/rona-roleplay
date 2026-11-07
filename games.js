@@ -46,10 +46,10 @@ sort:{run:(area,p,done)=>{let items=shuffle(p.items);let sel=null;
 // ספירה: להכניס n פריטים לתיק
 countTap:{run:(area,p,done)=>{let count=0;
  const bag=el('div','drop-target',p.bag);area.appendChild(bag);
- const cnt=el('div','price-tag','0 / '+p.n);area.appendChild(cnt);
+ const cnt=el('div','price-tag','0 מתוך '+p.n);area.appendChild(cnt);
  const row=el('div','opt-row');area.appendChild(row);
  for(let i=0;i<p.n+2;i++){const b=el('button','opt-btn',p.item);row.appendChild(b);
-  b.onclick=()=>{if(count>=p.n)return;b.style.display='none';count++;cnt.textContent=count+' / '+p.n;speak(''+count);sfx('tick');
+  b.onclick=()=>{if(count>=p.n)return;b.style.display='none';count++;cnt.textContent=count+' מתוך '+p.n;speak(''+count);sfx('tick');
    if(count===p.n){sfx('good');confettiBurst(6);speak(p.doneSay||'ספרת נכון!',done)}}}}},
 // סידור בסדר הנכון
 order:{run:(area,p,done)=>{let next=0;const cards=shuffle(p.cards.map((c,i)=>({e:c.e,n:c.n,i})));
