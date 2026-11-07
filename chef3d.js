@@ -215,7 +215,7 @@ function startChef3D(root) {
     if (!freestyle) speak('בחרי מה מכינים היום במטבח', () => speak('הלקוחה ביקשה ' + dish.name + '!'));
     else speak('בחרי מה מכינים היום במטבח');
     if (!freestyle) { // תמונת המנה המבוקשת על פתק ההזמנה - לילדה שלא קוראת
-      const pic = vegModel(dish.id, ticket); pic.position.set(0, -.28, .1); pic.scale.setScalar(2.5); stageObjs.push(pic);
+      const pic = vegModel(dish.id, ticket); pic.position.set(0, -.3, .12); pic.scale.setScalar(2.2); pic.rotation.x = { salad: 1.1, pizza: 1.3, sandwich: .45, shake: .15 }[dish.id] || 1; stageObjs.push(pic); // נטוי מול המצלמה - לא קצה דק
     }
     const stand = w.group(-2.2, 0, 1.2); stageObjs.push(stand);
     w.box(2.6, .8, .9, '#8d6e63', 0, .4, 0, stand);
@@ -245,6 +245,7 @@ function startChef3D(root) {
       }
     });
     stageTargets.push(tgt);
+    tgt.ring.material.color.set('#ff6d00'); tgt.ring.scale.setScalar(1.15);
     tgt.ring.visible = true;
   }
 
@@ -315,17 +316,16 @@ function startChef3D(root) {
     const hint = document.createElement('div'); hint.className = 'chef-hint';
     hint.innerHTML = '<svg viewBox="0 0 48 48" width="48" height="48"><path d="M20 40c-4-2-8-8-8-14 0-3 3-3 4-1l2 3V10c0-3 5-3 5 0v14l1-6c1-3 5-2 5 1l1 5 1-3c1-2 4-1 4 1v8c0 6-4 11-9 11h-2z" fill="#fff" stroke="#5d4037" stroke-width="2.5" stroke-linejoin="round"/></svg>';
     w.root.appendChild(hint); const _cl = () => hint.remove(); stageObjs.push({ parent: { remove: _cl } });
-    let hintOn = true;
     items.forEach((k, i) => {
       const it = vegModel(k, scene); const px = -.85 + (i - (items.length - 1) / 2) * .6; it.position.set(px, .95, 2.1); stageObjs.push(it);
       let col = '#e0e0e0'; it.traverse(o => { if (o.isMesh && o.material && col === '#e0e0e0') col = '#' + o.material.color.getHexString() });
       const pieces = [];
       for (let q = 0; q < 3; q++) { const pc = w.cyl(.07, .07, .035, col, px - .18 + q * .18, .97, 2.55, scene); pc.visible = false; pieces.push(pc); stageObjs.push(pc) }
-      active.push({ it, pieces, done: false });
+      const rec = { it, pieces, done: false, started: false }; active.push(rec);
       const r = w.registerRub(it, {
-        needed: 260, radiusPx: 90,
+        needed: 260, radiusPx: 55,
         onProgress: (p) => {
-          hintOn = false; it.scale.setScalar(1 - p * .4); it.rotation.y += .1; sfx('tick');
+          rec.started = true; it.scale.setScalar(1 - p * .4); it.rotation.y += .1; sfx('tick');
           pieces.forEach((pc, q) => { pc.visible = p > (q + 1) / 3.2 });
         },
         onDone: () => {
@@ -343,7 +343,7 @@ function startChef3D(root) {
       const cur = active.find(a => !a.done); if (!cur) { knife.visible = false; hint.style.display = 'none'; return }
       knife.position.set(cur.it.position.x, 1.45 + Math.abs(Math.sin(t * 6)) * .18, cur.it.position.z + .1); knife.rotation.z = -.5;
       const sp = w.screenPos(cur.it);
-      hint.style.display = hintOn ? 'block' : 'none';
+      hint.style.display = cur.started ? 'none' : 'block';
       hint.style.left = (sp.x + Math.sin(t * 4) * 28) + 'px'; hint.style.top = (sp.y - 10) + 'px';
     });
   }
@@ -401,7 +401,8 @@ function startChef3D(root) {
     vegModel(dish.id, plate);
     const dr = w.makeDraggable(plate, { proxyR: .4, onPick: () => sfx('tick'), onMiss: () => fb('הלקוחה מחכה ליד השולחן!') });
     stageDrags.push(dr);
-    const tgt = w.addDropTarget(tableG, {
+    const tableAnchor = w.group(0, .95, 0, tableG);
+    const tgt = w.addDropTarget(tableAnchor, { ringParent: tableG,
       radiusPx: 170, ringR: .85, ringPos: new THREE.Vector3(0, .95, 0), ringRot: { x: Math.PI / 2 },
       onDrop: (d) => {
         sfx('good'); d.grp.position.set(0, 0, 0); d.grp.scale.setScalar(.01); d.active = false;
@@ -450,8 +451,9 @@ function startChef3D(root) {
       stageDrags.push(dr);
     });
     [[binG, true], [binB, false]].forEach(([bin, isGood]) => {
-      const t = w.addDropTarget(bin, {
-        radiusPx: 150, ringR: .55, ringPos: new THREE.Vector3(0, 1.25, 0), ringRot: { x: Math.PI / 2 },
+      const anchor = w.group(0, 1.0, 0, bin); // יעד הנחיתה במרכז הנראה של הסל (לא ברצפה) - שחרור על השפה נקלט
+      const t = w.addDropTarget(anchor, { ringParent: bin,
+        radiusPx: 125, ringR: .55, ringPos: new THREE.Vector3(0, 1.25, 0), ringRot: { x: Math.PI / 2 },
         accepts: () => true,
         onDrop: (d) => {
           if (d.userData.good === isGood) {
