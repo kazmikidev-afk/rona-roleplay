@@ -123,8 +123,8 @@ function startChef3D(root) {
   // ---------- שלב 0: בחירת מנה ----------
   function stageRecipe() {
     cleanupStage();
-    w.banner('בחרי מה מכינים היום במטבח');
-    setTimeout(() => speak('הלקוחה ביקשה ' + dish.name + '!'), 2000);
+    w.banner('בחרי מה מכינים היום במטבח', null);
+    speak('בחרי מה מכינים היום במטבח', () => speak('הלקוחה ביקשה ' + dish.name + '!'));
     const stand = w.group(-2.2, 0, 1.2); stageObjs.push(stand);
     w.box(2.6, .8, .9, '#8d6e63', 0, .4, 0, stand);
     w.box(2.8, .1, 1, '#fdf6ee', 0, .85, 0, stand);
@@ -133,7 +133,7 @@ function startChef3D(root) {
       w.cyl(.26, .2, .05, '#ffffff', 0, 0, 0, plate);
       vegModel(d.id, plate);
       const dr = w.makeDraggable(plate, {
-        proxyR: .34, onPick: () => speak(d.name), onMiss: () => speak('הלקוחה ביקשה מנה אחרת. נסי שוב!')
+        proxyR: .34, onPick: () => speak(d.name)
       });
       stageDrags.push(dr);
     });
@@ -158,8 +158,8 @@ function startChef3D(root) {
   // ---------- שלב 1: איסוף מרכיבים ----------
   function stageGather() {
     cleanupStage();
-    w.banner('אספי את המרכיבים מהמדף');
-    setTimeout(() => speak(dish.name), 1800);
+    w.banner('אספי את המרכיבים מהמדף', null);
+    speak('אספי את המרכיבים מהמדף', () => speak(dish.name));
     const shelf = w.group(0, 0, 1.2); stageObjs.push(shelf);
     w.box(5.6, .1, .8, '#a1887f', 0, .5, 0, shelf);
     w.box(5.6, .1, .8, '#a1887f', 0, 1.25, 0, shelf);
@@ -170,11 +170,12 @@ function startChef3D(root) {
     items.forEach((k, i) => {
       const row = i < 4 ? 1.35 : .6, col = (i % 4) - 1.5;
       const it = vegModel(k, shelf); it.position.set(col * 1.15, row, 0);
+      const needed = need.includes(k);
       const dr = w.makeDraggable(it, {
         proxyR: .3, onPick: () => sfx('tick'),
-        onMiss: () => { sfx('oops'); speak('זה לא במתכון. נסי שוב!') }
+        onMiss: needed ? null : () => speak('זה לא במתכון. נסי שוב!')
       });
-      dr.userData = { kind: k, needed: need.includes(k) };
+      dr.userData = { kind: k, needed };
       stageDrags.push(dr);
     });
     const tgt = w.addDropTarget(basket, {
@@ -203,8 +204,8 @@ function startChef3D(root) {
   // ---------- שלב 2: קיצוץ ----------
   function stageChop() {
     cleanupStage();
-    w.banner('קוצצים');
-    setTimeout(() => speak('קצצי את הירקות על הקרש'), 1400);
+    w.banner('קוצצים', null);
+    speak('קוצצים', () => speak('קצצי את הירקות על הקרש'));
     const items = dish.ings.slice(0, 2 + lvl);
     let chopped = 0;
     const rubs = [];
@@ -229,7 +230,8 @@ function startChef3D(root) {
   // ---------- שלב 3: שלבי הכנה בסדר ----------
   function stageSteps() {
     cleanupStage();
-    w.banner('מכינים בסדר הנכון!');
+    w.banner('מכינים בסדר הנכון!', null);
+    speak('מכינים בסדר הנכון!');
     const bowl = w.group(0, .95, 2.1); stageObjs.push(bowl);
     w.cyl(.3, .2, .2, '#eceff1', 0, .1, 0, bowl);
     dish.ings.slice(0, 2 + lvl).forEach((k, i) => { const v = vegModel(k, bowl); v.scale.setScalar(.55); v.position.set(-.12 + i * .12, .18, 0) });
@@ -240,7 +242,7 @@ function startChef3D(root) {
       { obj: stove, say: 'אופים או מבשלים' },
       { obj: tableG, say: 'קשטי את הצלחת והגישי בחיוך' }];
     let step = 0;
-    setTimeout(() => speak(order[0].say), 1800);
+    setTimeout(() => speak(order[0].say), 2200);
     const tgts = order.map((o, i) => {
       const t = w.addDropTarget(o.obj, {
         radiusPx: 160, ringR: .5, ringPos: new THREE.Vector3(0, .5, 0), ringRot: { x: Math.PI / 2 },
@@ -335,7 +337,7 @@ function startChef3D(root) {
     const p = w.getProgress('chef3d') || { visits: 0, stars: 0 };
     p.visits++; p.stars++;
     w.saveProgress('chef3d', p);
-    w.banner('כל הכבוד! סיימת!');
+    w.banner('כל הכבוד! סיימת!', null);
     w.endPanel('הלקוחה מאושרת! את שפית אלופה!', 'שחקי שוב', () => location.reload());
     speak('הלקוחה מאושרת! את שפית אלופה!');
   }
@@ -350,5 +352,6 @@ function startChef3D(root) {
   setStage(0);
   w.getStage = () => stage;
   w.STAGES = STAGES;
+  w._dishId = dish.id; // debug ל-e2e
   return w.dispose.bind(w);
 }

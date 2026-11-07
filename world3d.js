@@ -93,7 +93,7 @@ function startWorld3D(root, opts) {
       '<button class="w3d-spk" aria-label="שמיעה">' + SVG.speaker + '</button><span>' + text + '</span>');
     bannerEl.querySelector('.w3d-spk').onclick = () => speak(sayText || text);
     hud.appendChild(bannerEl);
-    speak(sayText || text);
+    if (sayText !== null) speak(sayText || text);
   }
   let progEl = null, progN = 0, progFilled = 0;
   function progressInit(n) {
@@ -255,7 +255,7 @@ function startWorld3D(root, opts) {
     mat, box, ball, cyl, group, noRay, buildRoom,
     banner, progressInit, progressStep, endPanel,
     makeDraggable, addDropTarget, setActiveTool, registerRub, screenPos, onTick, getProgress, saveProgress,
-    camBase, camLook, _drags: draggables, _tgts: targets,
+    camBase, camLook, _drags: draggables, _tgts: targets, _rubs: rubs,
     dispose() { alive = false; removeEventListener('resize', onRes); renderer.dispose(); root.innerHTML = '' }
   };
   root._world3d = api; // debug handle לבדיקות e2e
