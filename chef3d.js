@@ -15,11 +15,11 @@ function startChef3D(root) {
   // שיש אחורי + כיריים + כיור
   w.box(6.4, .9, .9, '#8d6e63', 0, .45, -3.3);           // ארונות
   w.box(6.6, .12, 1.05, '#fdf6ee', 0, .96, -3.3);        // משטח
-  const stove = w.group(1.9, 1.05, -3.3);
+  const stove = w.group(1.7, 1.05, -3.3);
   w.box(1.1, .06, .8, '#37474f', 0, 0, 0, stove);
   [[-.25, -.18], [.25, -.18], [-.25, .18], [.25, .18]].forEach(p => w.cyl(.14, .14, .03, '#263238', p[0], .05, p[1], stove));
   const pot = w.cyl(.3, .28, .3, '#e05b4b', 0, .25, 0, stove);
-  const sink = w.group(-1.9, 1.02, -3.3);
+  const sink = w.group(-1.7, 1.02, -3.3);
   w.box(1, .08, .7, '#90a4ae', 0, 0, 0, sink);
   w.box(.8, .06, .5, '#4fc3f7', 0, .01, 0, sink);         // מים
   w.cyl(.04, .04, .5, '#78909c', -.35, .3, -.2, sink);    // ברז
@@ -39,7 +39,7 @@ function startChef3D(root) {
   w.cyl(.42, .32, .35, '#c98d4b', 0, .17, 0, basket);
   w.cyl(.36, .36, .04, '#8d5a2b', 0, .3, 0, basket);
   // חלון הזמנות
-  const ticket = w.group(0, 2.6, -4.25);
+  const ticket = w.group(-2.2, 2.4, -4.25);
   w.box(1.5, 1, .1, '#fff', 0, 0, 0, ticket);
   w.box(1.3, .25, .12, '#ff5e8a', 0, .4, 0, ticket);
   // שולחן לקוח
@@ -106,12 +106,12 @@ function startChef3D(root) {
   w.progressInit(6);
 
   const CAMS = [ // מוקד מצלמה לכל שלב (קרוב לאזור הפעולה — קריטי בנייד)
-    { p: [-1.0, 2.3, 5.8], l: [-1.8, 1.2, 0.8] },  // recipe: דוכן המנות
-    { p: [0, 2.6, 6.2],    l: [0, 1.0, 1.6] },     // gather: מדף+סל
+    { p: [-1.3, 2.5, 5.6], l: [-2.1, 1.5, 0.2] },  // recipe: דוכן+חלון הזמנות
+    { p: [0, 2.5, 6.0],    l: [0, 1.1, 1.5] },     // gather: מדף+סל
     { p: [-0.9, 2.4, 5.4], l: [-1.1, 0.9, 2.0] },  // chop: קרש
-    { p: [0, 2.9, 4.4],    l: [0, 1.1, -3.0] },    // steps: דלפק אחורי
+    { p: [0, 2.9, 4.2],    l: [0, 1.1, -3.2] },    // steps: דלפק אחורי
     { p: [1.6, 2.5, 5.6],  l: [3.2, 1.2, 0.4] },   // serve: שולחן לקוח
-    { p: [0, 2.6, 6.6],    l: [0, 1.0, 2.4] },     // sort: סלים
+    { p: [0, 2.6, 6.2],    l: [0, 1.0, 2.3] },     // sort: סלים
     { p: [0, 2.5, 6.4],    l: [0, 1.3, 0] }        // done: כללי
   ];
   function setStage(i) {
@@ -175,8 +175,8 @@ function startChef3D(root) {
     w.banner('אספי את המרכיבים מהמדף', null);
     speak('אספי את המרכיבים מהמדף', () => speak(dish.name));
     const shelf = w.group(0, 0, 1.2); stageObjs.push(shelf);
-    w.box(5.6, .1, .8, '#a1887f', 0, .5, 0, shelf);
-    w.box(5.6, .1, .8, '#a1887f', 0, 1.25, 0, shelf);
+    w.box(4.6, .1, .8, '#a1887f', 0, .5, 0, shelf);
+    w.box(4.6, .1, .8, '#a1887f', 0, 1.25, 0, shelf);
     const need = dish.ings.slice(0, 2 + lvl);
     const decoys = DECOYS.filter(k => !need.includes(k)).slice(0, lvl);
     const items = need.concat(decoys).sort(() => Math.random() - .5);
@@ -251,10 +251,12 @@ function startChef3D(root) {
     dish.ings.slice(0, 2 + lvl).forEach((k, i) => { const v = vegModel(k, bowl); v.scale.setScalar(.55); v.position.set(-.12 + i * .12, .18, 0) });
     const dr = w.makeDraggable(bowl, { proxyR: .42, onPick: () => sfx('tick') });
     stageDrags.push(dr);
+    const plating = w.group(0, 1.02, -3.3); stageObjs.push(plating);
+    w.cyl(.34, .26, .06, '#ffffff', 0, .03, 0, plating);
     const order = [
       { obj: sink, say: 'שוטפים ידיים וירקות' },
       { obj: stove, say: 'אופים או מבשלים' },
-      { obj: tableG, say: 'קשטי את הצלחת והגישי בחיוך' }];
+      { obj: plating, say: 'קשטי את הצלחת והגישי בחיוך' }];
     let step = 0;
     setTimeout(() => speak(order[0].say), 2200);
     const tgts = order.map((o, i) => {
@@ -315,7 +317,7 @@ function startChef3D(root) {
     const items = [];
     for (let i = 0; i < n / 2; i++) { items.push(goods[i % goods.length]); items.push(bads[i % bads.length]) }
     items.sort(() => Math.random() - .5);
-    const binG = w.group(-2.6, 0, 2.1), binB = w.group(2.6, 0, 2.1);
+    const binG = w.group(-1.9, 0, 2.1), binB = w.group(1.9, 0, 2.1);
     stageObjs.push(binG, binB);
     w.cyl(.45, .35, .5, '#43a047', 0, .95, 0, binG);
     w.cyl(.45, .35, .5, '#ef6c00', 0, .95, 0, binB);
