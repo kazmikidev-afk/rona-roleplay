@@ -62,19 +62,22 @@ function startChef3D(root) {
     const M = {
       tomato: () => { w.ball(.16, '#e53935', 0, .16, 0, g); w.cyl(.03, .05, .05, '#43a047', 0, .33, 0, g) },
       cucumber: () => { const c = w.cyl(.09, .09, .44, '#43a047', 0, .1, 0, g); c.rotation.z = Math.PI / 2 },
-      carrot: () => { const c = w.cyl(.03, .1, .42, '#fb8c00', 0, .2, 0, g); w.ball(.07, '#66bb6a', 0, .44, 0, g, 1, .5, 1) },
+      carrot: () => { const c = w.cyl(.04, .13, .5, '#fb8c00', 0, .24, 0, g); [-.05, 0, .05].forEach(x => w.ball(.06, '#43a047', x, .52, 0, g, .7, 1.2, .7)) }, // חרוט כתום עם צמטר ירוק
       corn: () => { w.ball(.1, '#fdd835', -.07, .12, 0, g, 1, 1.6, 1); w.ball(.1, '#ffee58', .07, .12, 0, g, 1, 1.6, 1) },
       lettuce: () => { w.ball(.19, '#7cb342', 0, .18, 0, g, 1, .8, 1); w.ball(.13, '#9ccc65', 0, .24, 0, g, 1, .7, 1) },
       bread: () => { w.box(.36, .2, .24, '#d7a86e', 0, .1, 0, g); w.ball(.18, '#e3bd8d', 0, .2, 0, g, 1, .5, .68) },
       cheese: () => { const c = w.box(.3, .1, .3, '#ffca28', 0, .05, 0, g); c.rotation.y = .6 },
-      egg: () => w.ball(.13, '#fff8e1', 0, .13, 0, g, 1, 1.2, 1),
+      egg: () => w.ball(.15, '#fff8e1', 0, .16, 0, g, 1, 1.38, 1), // סילואט סגלגל ברור
       banana: () => { const b = w.ball(.09, '#ffeb3b', 0, .1, 0, g, 2.6, 1, 1); b.rotation.z = .5 },
       strawberry: () => { w.ball(.14, '#e53935', 0, .14, 0, g, 1, 1.1, 1); w.ball(.05, '#43a047', 0, .29, 0, g, 1, .4, 1) },
       apple: () => { w.ball(.16, '#e53935', 0, .16, 0, g); w.cyl(.015, .015, .1, '#6d4c41', 0, .34, 0, g) },
       orange: () => w.ball(.15, '#fb8c00', 0, .15, 0, g),
       milk: () => { w.box(.2, .36, .2, '#eceff1', 0, .18, 0, g); w.box(.2, .09, .2, '#4fc3f7', 0, .4, 0, g) },
       juice: () => { w.box(.2, .34, .2, '#ffb74d', 0, .17, 0, g); w.box(.2, .07, .2, '#e65100', 0, .37, 0, g) },
-      candy: () => { w.ball(.12, '#ec407a', 0, .12, 0, g); w.ball(.04, '#f8bbd0', .14, .12, 0, g, 1, 1, 1); w.ball(.04, '#f8bbd0', -.14, .12, 0, g) },
+      candy: () => { // ממתק עטוף: גוף ורוד + קצוות עטיפה — לא כדור
+        const b = w.cyl(.1, .1, .2, '#ec407a', 0, .12, 0, g); b.rotation.z = Math.PI / 2;
+        const l = w.cyl(.005, .08, .12, '#f8bbd0', .2, .12, 0, g); l.rotation.z = -Math.PI / 2;
+        const r = w.cyl(.08, .005, .12, '#f8bbd0', -.2, .12, 0, g); r.rotation.z = -Math.PI / 2 },
       cookie: () => { w.cyl(.16, .16, .06, '#a1703a', 0, .03, 0, g); w.ball(.03, '#5d4037', .05, .07, .05, g); w.ball(.03, '#5d4037', -.06, .07, -.03, g) },
       fries: () => { w.box(.2, .18, .14, '#e53935', 0, .09, 0, g); for (let i = 0; i < 4; i++) w.box(.035, .2, .035, '#fdd835', -.06 + i * .04, .24, 0, g) },
       cake: () => { w.cyl(.18, .18, .16, '#f48fb1', 0, .08, 0, g); w.cyl(.19, .19, .05, '#fff', 0, .18, 0, g); w.ball(.05, '#e53935', 0, .23, 0, g) },
@@ -317,14 +320,14 @@ function startChef3D(root) {
     const items = [];
     for (let i = 0; i < n / 2; i++) { items.push(goods[i % goods.length]); items.push(bads[i % bads.length]) }
     items.sort(() => Math.random() - .5);
-    const binG = w.group(-.95, 0, 2.1), binB = w.group(.95, 0, 2.1); // בתוך פריים הנייד
+    const binG = w.group(-.8, 0, 2.1), binB = w.group(.8, 0, 2.1); // בתוך פריים הנייד כולל שוליים
     stageObjs.push(binG, binB);
     w.cyl(.45, .35, .5, '#43a047', 0, .95, 0, binG);
     w.cyl(.45, .35, .5, '#ef6c00', 0, .95, 0, binB);
     let left = items.length;
     items.forEach((s, i) => {
       const col = i % 5, row = Math.floor(i / 5); // שורה שנייה ברמות גבוהות — שלא ייצאו מהמסך
-      const it = vegModel(s.k, scene); it.position.set(-1.05 + col * .6, .95, 2.75 - row * .4); stageObjs.push(it);
+      const it = vegModel(s.k, scene); it.position.set(-1.05 + col * .62, .95, 2.75 - row * .42); it.scale.setScalar(1.5); stageObjs.push(it); // מוגדל — קריא בנייד
       const dr = w.makeDraggable(it, { proxyR: .28, onPick: () => { sfx('tick'); speak(s.n) }, onMiss: () => speak('זה לא המקום. נסי סל אחר') }); // אמירת שם הפריט — זיהוי לילדה שלא קוראת
       dr.userData = { good: s.good };
       stageDrags.push(dr);
@@ -346,6 +349,7 @@ function startChef3D(root) {
       });
       stageTargets.push(t);
     });
+    stageTargets.forEach(t => { t.ring.visible = true }); // טבעות זהב על שני הסלים — מטרות ברורות
   }
 
   // ---------- שלב 6: סיום ----------
