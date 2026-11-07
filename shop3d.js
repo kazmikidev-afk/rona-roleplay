@@ -42,7 +42,7 @@ function startShop3D(root) {
   // הלקוחה — דמות מסתובבת בין ביקורים (צבע משתנה)
   const CUST_COLORS = ['#b57edc', '#f4a460', '#90caf9', '#a5d6a7', '#f48fb1', '#ffe082'];
   const custColor = CUST_COLORS[prog.visits % CUST_COLORS.length];
-  const cust = w.group(3.4, 0, -.2);
+  const cust = w.group(2.95, 0, -.2);
   w.ball(.55, custColor, 0, .95, 0, cust, 1, 1.15, 1);
   w.ball(.42, custColor, 0, 1.85, 0, cust);
   w.ball(.13, custColor, -.3, 2.2, 0, cust); w.ball(.13, custColor, .3, 2.2, 0, cust);
@@ -93,9 +93,9 @@ function startShop3D(root) {
   let stage = 0;
   w.progressInit(4);
   const CAMS = [ // נכתב לדסקטופ; הנייד מקבל ריווח אוטומטי (כלל 15)
-    { p: [0, 2.7, 6.4], l: [0, 1.2, -1.2] },  // find: מדפים+עגלה
-    { p: [0, 2.7, 6.2], l: [0, 1.1, 0.6] },   // shelfsort: שני מדפי המיון
-    { p: [0, 2.6, 6.4], l: [0, 1.0, 1.6] },   // count: שקית+פריטים
+    { p: [-0.7, 2.7, 6.6], l: [-0.7, 1.2, -1.2] },  // find: מדפים+עגלה (העגלה בשמאל)
+    { p: [-0.3, 3.0, 10.1], l: [-0.3, 1.0, 0.4] },   // shelfsort: מקרר(-2.2) עד מדף ירוק(1.6) — רוחב מלא גם בנייד
+    { p: [0.65, 2.6, 6.9], l: [0.65, 1.0, 1.6] },   // count: שקית(1.4)+פריטים
     { p: [0.5, 2.9, 7.0], l: [0.6, 0.9, 0.2] },  // pay: קופה+ערימת מטבעות בפריים
     { p: [0, 2.5, 6.4], l: [0, 1.3, 0] }      // done
   ];
@@ -167,9 +167,9 @@ function startShop3D(root) {
   // ---------- שלב 1: מיון סחורה למדפים ----------
   function stageShelfsort() {
     cleanupStage();
-    w.banner('מייני: ירקות ופירות למדף הירוק, שאר למקרר', null);
-    speak('מייני את הסחורה למדפים הנכונים');
     const withBakery = eff >= 2; // קטגוריית מאפייה מרמה 2 — כמו משחק ה-2D (3 קטגוריות)
+    w.banner(withBakery ? 'מייני: ירקות ופירות לירוק, מאפים לחום, שאר למקרר' : 'מייני: ירקות ופירות למדף הירוק, שאר למקרר', null);
+    speak(withBakery ? 'מייני: ירקות ופירות למדף הירוק, מאפים למדף החום, וכל השאר למקרר' : 'מייני את הסחורה למדפים הנכונים');
     const veg = shuffled(GOODS.filter(g => g.cat === 'veg')).slice(0, withBakery ? 2 : 2 + Math.floor(eff / 2));
     const cool = shuffled(GOODS.filter(g => g.cat === 'cool')).slice(0, withBakery ? 2 : 2 + Math.ceil(eff / 2));
     const bake = withBakery ? shuffled(GOODS.filter(g => g.cat === 'bakery')).slice(0, 2) : [];
@@ -230,7 +230,7 @@ function startShop3D(root) {
       stageDrags.push(dr);
       return it;
     });
-    shelfRow(placed, .55, 2.7);
+    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set(.3 + (col - 1) * .8, .55 + row * .7, 2.5) }); // שתי שורות גלויות, מיושר לשקית
     let got = 0;
     const tgt = w.addDropTarget(bag, {
       radiusPx: 150, ringR: .5, ringPos: new THREE.Vector3(0, .75, 0), ringRot: { x: Math.PI / 2 },
