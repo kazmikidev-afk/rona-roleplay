@@ -137,11 +137,11 @@ function roleScreen(role,sc){
   if(v3v>0)c3.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v3v,5))+(v3v>5?' ×'+v3v:'')));
   c3.onclick=()=>{sfx('tick');openVet3D()};sc.appendChild(c3)}
  if(role.id==='chef'&&new URLSearchParams(location.search).has('exp3d')){const v=(STATE.chef3d&&STATE.chef3d.visits)||0;
-  const c4=el('button','vet3d-card','<span class="v3emoji">🍳</span><span class="v3txt">✨ מטבח תלת-ממדי · רמה '+Math.min(unl,role.levels.length)+'</span>');
+  const c4=el('button','vet3d-card','<span class="v3emoji">🍳</span><span class="v3txt">✨ מטבח תלת-ממדי · רמה '+Math.min((window.prog3d?prog3d.get('chef').lvl:unl),role.levels.length)+'</span>');
   if(v>0)c4.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v,5))+(v>5?' ×'+v:'')));
   c4.onclick=()=>{sfx('tick');openChef3D()};sc.appendChild(c4)}
  if(role.id==='shop'&&new URLSearchParams(location.search).has('exp3d')){const v=(STATE.shop3d&&STATE.shop3d.visits)||0;
-  const c5=el('button','vet3d-card','<span class="v3emoji">🛒</span><span class="v3txt">✨ חנות תלת-ממדית · רמה '+Math.min(unl,role.levels.length)+'</span>');
+  const c5=el('button','vet3d-card','<span class="v3emoji">🛒</span><span class="v3txt">✨ חנות תלת-ממדית · רמה '+Math.min((window.prog3d?prog3d.get('shop').lvl:unl),role.levels.length)+'</span>');
   if(v>0)c5.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v,5))+(v>5?' ×'+v:'')));
   c5.onclick=()=>{sfx('tick');openShop3D()};sc.appendChild(c5)}
  sc.appendChild(lvlRow);
