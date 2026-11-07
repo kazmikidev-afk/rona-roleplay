@@ -6,6 +6,23 @@ function saveState(){try{const prev=JSON.parse(localStorage.getItem(LS_KEY));
  // שומרים גם שדות לא מוכרים שנכתבו לאחסון (למשל vet3d.visits או סצנות עתידיות) - אחרת שמירה רגילה דורסת אותם
  localStorage.setItem(LS_KEY,JSON.stringify(prev&&typeof prev==='object'&&!Array.isArray(prev)?Object.assign({},prev,STATE):STATE))}catch(e){}}
 loadState();
+
+// --- גשר תלת-ממד → התקדמות קלאסית (בעלות: משולב ראשי; world3d.js בבעלות ה-fixer) ---
+// ביקור תלת-ממדי שהושלם = לקוח אחד שהושלם ברמה הנוכחית של התפקיד. שומר על מבנה
+// ה-90 פעילויות: לא מדלג על רמות, צובר לאותה תג/פתיחה כמו משחק דו-ממדי.
+function bridge3DAward(roleId){
+ const role=ROLES.find(r=>r.id===roleId);if(!role)return null;
+ const NL=role.levels.length,lvl=Math.min(STATE.unlocked[roleId]||1,NL);
+ STATE.done[roleId]=STATE.done[roleId]||{};STATE.done[roleId][lvl]=STATE.done[roleId][lvl]||{};
+ const arr=role.levels[lvl-1];const ci=arr.findIndex((_,i)=>!STATE.done[roleId][lvl][i]);
+ if(ci<0){saveState();return {lvl,already:true}}
+ STATE.done[roleId][lvl][ci]='3d'; // שיוך גלוי: הושלם בביקור תלת-ממדי, לא במשחק קלאסי
+ const lvlDone=arr.every((_,i)=>STATE.done[roleId][lvl][i]);
+ let newBadge=false,newLevel=false;
+ if(lvlDone&&!(STATE.badges[roleId]||[])[lvl-1]){STATE.badges[roleId]=STATE.badges[roleId]||[];STATE.badges[roleId][lvl-1]=true;newBadge=true;
+  if(lvl<NL){STATE.unlocked[roleId]=Math.max(STATE.unlocked[roleId]||1,lvl+1);newLevel=true;STATE.fresh[roleId]=lvl+1}else STATE.unlocked[roleId]=NL}
+ saveState();return {lvl,newBadge,newLevel,badge:role.badge}}
+window.bridge3DAward=bridge3DAward;
 // מיגרציה: אם רמה סוימה לפני שנוספו רמות חדשות, פותחים את הבאה אוטומטית
 function normalizeState(){if(typeof ROLES==='undefined')return;ROLES.forEach(r=>{const NL=r.levels.length;let u=STATE.unlocked[r.id]||1;
  while(u<NL&&(STATE.done[r.id]||{})[u]&&r.levels[u-1].every((_,i)=>STATE.done[r.id][u][i]))u++;
@@ -122,15 +139,22 @@ function roleScreen(role,sc){
   const c3=el('button','vet3d-card','<span class="v3emoji">🐶</span><span class="v3txt">✨ '+(v3v?'ביקור תלת-ממדי במרפאה':'חדש! ביקור תלת-ממדי במרפאה')+'</span>');
   if(v3v>0)c3.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v3v,5))+(v3v>5?' ×'+v3v:'')));
   c3.onclick=()=>{sfx('tick');openVet3D()};sc.appendChild(c3)}
- if(role.id==='chef'&&new URLSearchParams(location.search).has('exp3d')){const c4=el('button','vet3d-card','<span class="v3emoji">🍳</span><span class="v3txt">✨ חדש! מטבח תלת-ממדי</span>');
+ if(role.id==='chef'&&new URLSearchParams(location.search).has('exp3d')){const v=(STATE.chef3d&&STATE.chef3d.visits)||0;
+  const c4=el('button','vet3d-card','<span class="v3emoji">🍳</span><span class="v3txt">✨ מטבח תלת-ממדי · רמה '+Math.min(unl,role.levels.length)+'</span>');
+  if(v>0)c4.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v,5))+(v>5?' ×'+v:'')));
   c4.onclick=()=>{sfx('tick');openChef3D()};sc.appendChild(c4)}
+ if(role.id==='shop'&&new URLSearchParams(location.search).has('exp3d')){const v=(STATE.shop3d&&STATE.shop3d.visits)||0;
+  const c5=el('button','vet3d-card','<span class="v3emoji">🛒</span><span class="v3txt">✨ חנות תלת-ממדית · רמה '+Math.min(unl,role.levels.length)+'</span>');
+  if(v>0)c5.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v,5))+(v>5?' ×'+v:'')));
+  c5.onclick=()=>{sfx('tick');openShop3D()};sc.appendChild(c5)}
  sc.appendChild(lvlRow);
  const done=(STATE.done[role.id]||{})[unl]||{};
  const doneCount=Object.keys(done).length;
  sc.appendChild(el('p','screen-sub',`ברמה ${unl}: עזרת ל-${doneCount} מתוך ${role.levels[unl-1].length} דמויות`));
  const chars=el('div','char-row');
  role.levels[unl-1].forEach((ch,i)=>{const d=done[i];
-  const b=el('button','char-card',`${d?'<span class="done-mark">✔️</span>':''}<div class="ce">${ch.c[0]}</div><div class="cn">${ch.c[1]}</div>`);
+  const mark=d?`<span class="done-mark">✔️</span>${d==='3d'?'<span class="done-3d">3D</span>':''}`:'';
+  const b=el('button','char-card',`${mark}<div class="ce">${ch.c[0]}</div><div class="cn">${ch.c[1]}</div>`);
   b.onclick=()=>{sfx('tick');runVisit(role,unl,i)};chars.appendChild(b)});
  sc.appendChild(chars);
 }
@@ -276,6 +300,10 @@ function openVet3D(){
 
 function openChef3D(){
  show(sc=>{const wrap=el('div','vet3d-wrap');sc.appendChild(wrap);window.__scene3dCleanup=startChef3D(wrap)},'המטבח התלת-ממדי ✨');
+}
+
+function openShop3D(){
+ show(sc=>{const wrap=el('div','vet3d-wrap');sc.appendChild(wrap);window.__scene3dCleanup=startShop3D(wrap)},'החנות התלת-ממדית ✨');
 }
 
 // --- תגים ---

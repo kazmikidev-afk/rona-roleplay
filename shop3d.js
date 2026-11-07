@@ -42,7 +42,7 @@ function startShop3D(root) {
   // הלקוחה — דמות מסתובבת בין ביקורים (צבע משתנה)
   const CUST_COLORS = ['#b57edc', '#f4a460', '#90caf9', '#a5d6a7', '#f48fb1', '#ffe082'];
   const custColor = CUST_COLORS[prog.visits % CUST_COLORS.length];
-  const cust = w.group(3.4, 0, -.2);
+  const cust = w.group(2.5, 0, -.2); // גוף הלקוחה נחתך בנייד גם כשהטבעת בפריים
   w.ball(.55, custColor, 0, .95, 0, cust, 1, 1.15, 1);
   w.ball(.42, custColor, 0, 1.85, 0, cust);
   w.ball(.13, custColor, -.3, 2.2, 0, cust); w.ball(.13, custColor, .3, 2.2, 0, cust);
@@ -93,9 +93,9 @@ function startShop3D(root) {
   let stage = 0;
   w.progressInit(4);
   const CAMS = [ // נכתב לדסקטופ; הנייד מקבל ריווח אוטומטי (כלל 15)
-    { p: [0, 2.7, 6.4], l: [0, 1.2, -1.2] },  // find: מדפים+עגלה
-    { p: [0, 2.7, 6.2], l: [0, 1.1, 0.6] },   // shelfsort: שני מדפי המיון
-    { p: [0, 2.6, 6.4], l: [0, 1.0, 1.6] },   // count: שקית+פריטים
+    { p: [-0.7, 2.7, 6.6], l: [-0.7, 1.2, -1.2] },  // find: מדפים+עגלה (העגלה בשמאל)
+    { p: [-0.3, 3.0, 10.1], l: [-0.3, 1.0, 0.4] },   // shelfsort: מקרר(-2.2) עד מדף ירוק(1.6) — רוחב מלא גם בנייד
+    { p: [0.65, 2.6, 6.9], l: [0.65, 1.0, 1.6] },   // count: שקית(1.4)+פריטים
     { p: [0.5, 2.9, 7.0], l: [0.6, 0.9, 0.2] },  // pay: קופה+ערימת מטבעות בפריים
     { p: [0, 2.5, 6.4], l: [0, 1.3, 0] }      // done
   ];
@@ -167,9 +167,9 @@ function startShop3D(root) {
   // ---------- שלב 1: מיון סחורה למדפים ----------
   function stageShelfsort() {
     cleanupStage();
-    w.banner('מייני: ירקות ופירות למדף הירוק, שאר למקרר', null);
-    speak('מייני את הסחורה למדפים הנכונים');
     const withBakery = eff >= 2; // קטגוריית מאפייה מרמה 2 — כמו משחק ה-2D (3 קטגוריות)
+    w.banner(withBakery ? 'מייני: ירקות ופירות לירוק, מאפים לחום, שאר למקרר' : 'מייני: ירקות ופירות למדף הירוק, שאר למקרר', null);
+    speak(withBakery ? 'מייני: ירקות ופירות למדף הירוק, מאפים למדף החום, וכל השאר למקרר' : 'מייני את הסחורה למדפים הנכונים');
     const veg = shuffled(GOODS.filter(g => g.cat === 'veg')).slice(0, withBakery ? 2 : 2 + Math.floor(eff / 2));
     const cool = shuffled(GOODS.filter(g => g.cat === 'cool')).slice(0, withBakery ? 2 : 2 + Math.ceil(eff / 2));
     const bake = withBakery ? shuffled(GOODS.filter(g => g.cat === 'bakery')).slice(0, 2) : [];
@@ -191,7 +191,8 @@ function startShop3D(root) {
       stageDrags.push(dr);
       return it;
     });
-    shelfRow(placed, .5, 2.6);
+    // שורה אחת של 5 + גלילה לשורה מתחת הרצפה = פריט מחוץ למסך (תקלה אמיתית ברמה 4 עם 6 פריטים)
+    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set((col - 1) * .85, .5 + row * .7, 2.6) });
     let left = items.length;
     const catTargets = [[shelfGreen, 'veg'], [fridgeG, 'cool']];
     if (withBakery) catTargets.push([shelfBakery, 'bakery']);
@@ -229,7 +230,7 @@ function startShop3D(root) {
       stageDrags.push(dr);
       return it;
     });
-    shelfRow(placed, .55, 2.7);
+    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set(.3 + (col - 1) * .8, .55 + row * .7, 2.5) }); // שתי שורות גלויות, מיושר לשקית
     let got = 0;
     const tgt = w.addDropTarget(bag, {
       radiusPx: 150, ringR: .5, ringPos: new THREE.Vector3(0, .75, 0), ringRot: { x: Math.PI / 2 },
@@ -255,7 +256,7 @@ function startShop3D(root) {
     // ערימת מטבעות על הדלפק הקדמי
     const nCoins = price + (eff >= 2 ? 1 : 0); // ברמה גבוהה מטבע נוסף לבחירה
     for (let i = 0; i < nCoins; i++) {
-      const coin = w.group(-.8 + i * .42, .92, 2.4); stageObjs.push(coin); // ריכוך — הרחק מקצה המסך (כלל 14)
+      const coin = w.group(-.55 + i * .42, .92, 2.4); stageObjs.push(coin); // ריכוך — הרחק מקצה המסך (כלל 14), לא מאחורי המקרר
       w.cyl(.14, .14, .04, '#ffd54f', 0, 0, 0, coin);
       w.cyl(.1, .1, .05, '#ffca28', 0, 0, 0, coin);
       const dr = w.makeDraggable(coin, { proxyR: .24, onPick: () => sfx('tick') });
@@ -302,14 +303,19 @@ function startShop3D(root) {
   }
 
   // ---------- שלב 4: סיום ----------
+  let awardedThisSession = false; // פרס אחד לביקור — אידמפוטנטי מול קריאה כפולה
   function stageDone() {
     cleanupStage();
     const p = w.getProgress('shop3d') || { visits: 0, stars: 0 };
-    p.visits++; p.stars++;
-    w.saveProgress('shop3d', p);
-    w.banner('כל הכבוד! סיימת!', null);
-    w.endPanel('הלקוחה מאושרת! את מוכרת אלופה!', 'שחקי שוב', () => location.reload());
-    speak('הלקוחה מאושרת! את מוכרת אלופה!');
+    if (!awardedThisSession) { p.visits++; p.stars++; w.saveProgress('shop3d', p) }
+    // גשר התקדמות: הביקור נספר כהשלמת לקוח אחד ברמה הנוכחית, עם שיוך '3d' גלוי
+    const aw = (!awardedThisSession && typeof bridge3DAward === 'function') ? bridge3DAward('shop') : null;
+    awardedThisSession = true;
+    const badgeLine = aw && aw.newBadge;
+    w.banner(badgeLine ? 'תג חדש!' : 'כל הכבוד! סיימת!', null);
+    w.endPanel(badgeLine ? 'קיבלת תג מוכרת!' : 'הלקוחה מאושרת! את מוכרת אלופה!', 'שחקי שוב', () => location.reload());
+    if (badgeLine) speak('השלמת את רמה ' + aw.lvl + ' וקיבלת תג מוכרת!', () => { if (aw.newLevel) speak('רמה ' + (aw.lvl + 1) + ' נפתחה!') });
+    else speak('הלקוחה מאושרת! את מוכרת אלופה!');
   }
 
   const ticks = [];
@@ -318,7 +324,7 @@ function startShop3D(root) {
   const pump = () => { ticks.forEach(fn => fn((performance.now()) / 1000)) };
   origOnTick(pump);
 
-  setStage(0);
+  setStage(+(new URLSearchParams(location.search).get('shopstage') || 0)); // פרמטר dev לבדיקות e2e
   w.getStage = () => stage;
   w.STAGES = STAGES;
   return w.dispose.bind(w);

@@ -1,7 +1,1 @@
-const CACHE='rona-roles-20261108k',FILES=['./','index.html','style.css','app.js','games.js','roles.js','voice-manifest.js','three.min.js','vet3d.js','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png','world3d.js','chef3d.js'];
-self.addEventListener('install',e=>e.waitUntil((async()=>{try{let c=await caches.open(CACHE);await c.addAll(FILES.map(f=>new Request(f+'?v='+CACHE,{cache:'no-cache'})));await self.skipWaiting();}catch(err){for(let cl of await self.clients.matchAll({includeUncontrolled:true}))cl.postMessage({type:'CACHE_ERROR'});throw err;}})()));
-self.addEventListener('activate',e=>e.waitUntil((async()=>{for(let k of await caches.keys())if(k.startsWith('rona-roles-')&&k!==CACHE)await caches.delete(k);await self.clients.claim();})()));
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==location.origin)return;e.respondWith((async()=>{const c=await caches.open(CACHE);const m=await c.match(e.request,{ignoreSearch:true});if(m)return m;if(e.request.mode==='navigate')return await c.match('index.html');const u=new URL(e.request.url);
- // ניגון אודיו שולח בקשות Range (206) שלא ניתן לשמור ב-cache; במקום זה מורידים עותק מלא ושומרים אותו - אחרי שמע ראשון ההקלטה עובדת גם בלי אינטרנט
- if(/\/audio\/[^/]+\.mp3$/.test(u.pathname)){const fr=await fetch(u.pathname);if(fr.status===200)c.put(u.pathname,fr.clone());return fr}
- return fetch(e.request);})());});
+const CACHE='rona-roles-20261108k',FILES=['./','index.html','style.css','app.js','games.js','roles.js','voice-manifest.js','three.min.js','vet3d.js','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png','world3d.js','chef3d.js','shop3d.js'];
