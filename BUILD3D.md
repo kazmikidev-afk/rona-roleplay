@@ -95,3 +95,12 @@
 - הקלטות: edge-tts `--voice he-IL-HilaNeural --rate=-5%` ישירות ל-mp3 (24kHz mono). מספרים פנויים אחרונים: בדוק `audio/v*.mp3` הגבוה ביותר והמשך ממנו.
 - בדיקות: `/tmp/e2e/flow.js` (דפדפן headless + puppeteer-core; יש debug handle על ה-wrap: `._vet3d` — לשכפל תבנית דומה `._world3d` בכל סצנה עם getStage()).
 - push: `tools vault write-file --name github-pages-deploy-token --key password --return-channel whatsapp` → `git push https://x-access-token:$(cat PATH)@github.com/kazmikidev-afk/rona-roleplay.git` → `rm` הקובץ.
+
+
+## כללי איכות נוספים (נלמדו במטבח, מחייבים תפקידים הבאים)
+14. מרווח מחוות-קצה: כל פריט אינטראקטיבי (גרירה/ליטוף) חייב להיות לפחות ~40px מקצוות המסך שמאלה וימינה ב-390px. גרירה מהקצה מפעילה מחוות "חזרה" של אנדרויד ומנווטת מהאפליקציה — קריטי גם במכשיר אמיתי.
+15. ריווח מצלמה אוטומטי: world3d flyTo מרחיק מצלמה לפי יחס מסך (dolly 1.32 מתחת ל-0.75, 1.14 מתחת ל-1.1). CAMS נכתבים לדסקטופ; הנייד מקבל ריווח אוטומטי. בכל זאת לבדוק פריים בשניהם.
+16. בדיקת שתי פלטפורמות לכל שינוי פריסה: תיקון נייד שבר דסקטופ (קערה מתחת לתחתית) ולהיפך. אין "עובר" בלי שני ריצות ירוקות.
+17. cleanupStage מסתיר טבעות של מטרות ישנות (ring.visible=false) — לא רק מסיר ממערך targets. רמזי רפאים = באג.
+18. מעברי שלב מושהים (setTimeout ~1.6s): בדיקות אוטומטיות חייבות waitStage עם polling, לא השהיה קבועה.
+19. AbortError של play() (pause במרוץ עם play בשרשור דיבור) — רעש קונסול שולי; לטפל ב-speak עם catch שקט כשנוגעים בו.
