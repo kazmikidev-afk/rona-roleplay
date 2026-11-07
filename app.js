@@ -144,6 +144,10 @@ function roleScreen(role,sc){
   const c5=el('button','vet3d-card','<span class="v3emoji">🛒</span><span class="v3txt">✨ חנות תלת-ממדית · רמה '+Math.min((window.prog3d?prog3d.get('shop').lvl:unl),role.levels.length)+'</span>');
   if(v>0)c5.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v,5))+(v>5?' ×'+v:'')));
   c5.onclick=()=>{sfx('tick');openShop3D()};sc.appendChild(c5)}
+ if(role.id==='dentist'&&new URLSearchParams(location.search).has('exp3d')){const v=(STATE.dentist3d&&STATE.dentist3d.visits)||0;
+  const c6=el('button','vet3d-card','<span class="v3emoji">🦷</span><span class="v3txt">✨ מרפאת שיניים בתלת-ממד · רמה '+Math.min((window.prog3d?prog3d.get('dentist').lvl:unl),role.levels.length)+'</span>');
+  if(v>0)c6.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v,5))+(v>5?' ×'+v:'')));
+  c6.onclick=()=>{sfx('tick');openDentist3D()};sc.appendChild(c6)}
  sc.appendChild(lvlRow);
  const done=(STATE.done[role.id]||{})[unl]||{};
  const doneCount=Object.keys(done).length;
@@ -300,6 +304,10 @@ function openChef3D(){
 
 function openShop3D(){
  show(sc=>{const wrap=el('div','vet3d-wrap');sc.appendChild(wrap);window.__scene3dCleanup=startShop3D(wrap)},'החנות התלת-ממדית');
+}
+
+function openDentist3D(){
+ show(sc=>{const wrap=el('div','vet3d-wrap');sc.appendChild(wrap);window.__scene3dCleanup=startDentist3D(wrap)},'מרפאת השיניים בתלת-ממד');
 }
 
 // --- תגים ---
