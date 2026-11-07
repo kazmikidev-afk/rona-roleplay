@@ -1,1 +1,1 @@
-const CACHE='rona-roles-20261108k',FILES=['./','index.html','style.css','app.js','games.js','roles.js','voice-manifest.js','three.min.js','vet3d.js','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png','world3d.js','chef3d.js','shop3d.js'];
+const CACHE='rona-roles-20261108l',FILES=['./','index.html','style.css','app.js','games.js','roles.js','voice-manifest.js','three.min.js','vet3d.js','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png','world3d.js','chef3d.js','shop3d.js'];
