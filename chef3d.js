@@ -72,8 +72,11 @@ function startChef3D(root) {
   const _dispose = w.dispose;
   w.dispose = () => { stopAll(); counterOff(); _dispose() };
 
-  const lvl = Math.min(3, (typeof STATE !== 'undefined' && STATE.unlocked && STATE.unlocked.chef) || 1);
-  const prog = w.getProgress('chef3d') || { visits: 0, stars: 0 };
+  // רמת 3D: מהמודול הנפרד prog3d (אם קיים); אחרת נפילה לשיטה הקודמת. קושי פנימי נחתך ל-3, רמה 4 = בחירה חופשית תמיד
+  const hasProg = () => typeof window !== 'undefined' && window.prog3d && typeof window.prog3d.get === 'function';
+  const readLvl = () => { try { if (hasProg()) { const r = window.prog3d.get('chef'); if (r && r.lvl) return r.lvl } } catch (e) {} return (typeof STATE !== 'undefined' && STATE.unlocked && STATE.unlocked.chef) || 1 };
+  let rawLvl = readLvl(), lvl = Math.min(3, rawLvl);
+  const visitsNow = () => { try { if (hasProg()) { const r = window.prog3d.get('chef'); if (r) return r.visits || 0 } } catch (e) {} return (w.getProgress('chef3d') || { visits: 0 }).visits || 0 };
 
   // ---------- המטבח ----------
   w.buildRoom({ floor: '#b9702a', wallA: '#ff9a4d', wallB: '#2fbf8f' });
@@ -170,7 +173,7 @@ function startChef3D(root) {
   let stage = 0;
   let dish = DISHES[Math.floor(Math.random() * DISHES.length)];
   // freestyle (רמות 2-3 ב-2D): בחירה חופשית של הילדה, לסירוגין עם הזמנת לקוח
-  let freestyle = lvl >= 2 && (prog.visits % 2 === 1);
+  let freestyle = rawLvl >= 4 || (lvl >= 2 && (visitsNow() % 2 === 1));
   w.progressInit(6);
 
   const CAMS = [ // מוקד מצלמה לכל שלב (קרוב לאזור הפעולה — קריטי בנייד)
@@ -467,20 +470,30 @@ function startChef3D(root) {
   }
 
   // ---------- שלב 6: סיום ----------
+  let doneGuard = false;
   function stageDone() {
     cleanupStage();
-    const p = w.getProgress('chef3d') || { visits: 0, stars: 0 };
-    p.visits++; p.stars++;
-    w.saveProgress('chef3d', p);
-    banner('כל הכבוד! סיימת!', null);
+    // התקדמות: פעם אחת בכניסה למסך סיום (דגל). עם prog3d הוא מעדכן visits/stars/lvl (בלי ספירה כפולה);
+    // בלעדיו - הגדלה ידנית כמקודם.
+    let r = null;
+    if (!doneGuard) {
+      doneGuard = true;
+      if (hasProg() && typeof window.prog3d.completeVisit === 'function') { try { r = window.prog3d.completeVisit('chef') } catch (e) { r = null } }
+      else { const p = w.getProgress('chef3d') || { visits: 0, stars: 0 }; p.visits++; p.stars++; w.saveProgress('chef3d', p) }
+    }
+    const newLvl = r && r.newLevel && r.lvl ? r.lvl : 0;
+    if (r && r.lvl) { rawLvl = r.lvl; lvl = Math.min(3, rawLvl) }
+    banner(newLvl ? 'רמה ' + newLvl + ' נפתחה!' : 'כל הכבוד! סיימת!', null);
     const ep = w.endPanel('הלקוחה מאושרת! את שפית אלופה!', 'שחקי שוב', () => {
-      ep.remove(); cust.position.y = 0;
+      ep.remove(); cust.position.y = 0; doneGuard = false;
       dish = DISHES[Math.floor(Math.random() * DISHES.length)];
-      const pr = w.getProgress('chef3d') || { visits: 0, stars: 0 };
-      freestyle = lvl >= 2 && (pr.visits % 2 === 1);
+      rawLvl = readLvl(); lvl = Math.min(3, rawLvl);
+      freestyle = rawLvl >= 4 || (lvl >= 2 && (visitsNow() % 2 === 1));
       w.progressInit(6); setStage(0);
     });
-    fb('הלקוחה מאושרת! את שפית אלופה!');
+    const lvlLine = 'רמה ' + newLvl + ' נפתחה!';
+    if (newLvl && typeof VOICE_CLIPS !== 'undefined' && VOICE_CLIPS[lvlLine]) fb(lvlLine, () => speak('הלקוחה מאושרת! את שפית אלופה!'));
+    else fb('הלקוחה מאושרת! את שפית אלופה!');
   }
 
   const blob = new THREE.Mesh(new THREE.CircleGeometry(.32, 24), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .28 }));
