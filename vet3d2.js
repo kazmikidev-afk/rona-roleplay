@@ -111,12 +111,12 @@ function startVet3D2(root) {
   function brushModel() { const g = w.group(0, 0, 0); w.box(.06, .05, .34, '#8d6e63', 0, 0, 0, g); w.box(.16, .08, .12, '#a1887f', 0, .02, .14, g); return g }
   function foodModel(kind) {
     const g = w.group(0, 0, 0);
-    if (kind === 'bone') { w.box(.06, .05, .3, '#fafafa', 0, 0, 0, g); w.ball(.07, '#fafafa', 0, 0, .16, g); w.ball(.07, '#fafafa', 0, 0, -.16, g) }
+    if (kind === 'bone') { w.box(.06, .05, .3, '#ffe0b2', 0, 0, 0, g); w.ball(.07, '#ffe0b2', 0, 0, .16, g); w.ball(.07, '#ffe0b2', 0, 0, -.16, g) }
     else if (kind === 'fish') { w.ball(.12, '#78909c', 0, 0, 0, g, 1.4, .7, .7); const t = w.cyl(.01, .09, .14, '#607d8b', 0, 0, -.2, g); t.rotation.x = Math.PI / 2 }
     else if (kind === 'carrot') { const c = w.cyl(.015, .06, .3, '#fb8c00', 0, 0, 0, g); c.rotation.x = Math.PI / 2; w.ball(.05, '#66bb6a', 0, .02, -.17, g, 1, 1.4, 1) }
-    else if (kind === 'leaf') w.ball(.11, '#66bb6a', 0, 0, 0, g, 1.3, .3, .9)
+    else if (kind === 'leaf') w.ball(.11, '#43a047', 0, 0, 0, g, 1.3, .3, .9)
     else if (kind === 'seeds') { [[0, 0, 0], [.05, .02, .04], [-.05, .02, .03], [0, .04, -.04]].forEach(p => w.ball(.035, '#d7a86e', p[0], p[1], p[2], g)) }
-    else if (kind === 'leaves') { [[0, 0, 0], [.07, .03, .02], [-.06, .04, -.03]].forEach(p => w.ball(.08, '#7cb342', p[0], p[1], p[2], g, 1.2, .35, .8)) }
+    else if (kind === 'leaves') { [[0, 0, 0], [.07, .03, .02], [-.06, .04, -.03]].forEach(p => w.ball(.08, '#558b2f', p[0], p[1], p[2], g, 1.2, .35, .8)) }
     else if (kind === 'banana') { const t = new THREE.Mesh(new THREE.TorusGeometry(.14, .045, 10, 14, Math.PI * 1.1), new THREE.MeshStandardMaterial({ color: '#ffee58', roughness: .8 })); t.rotation.z = -.4; g.add(t) }
     else if (kind === 'salad') { w.ball(.13, '#aed581', 0, 0, 0, g, 1.2, .6, 1.2); w.ball(.06, '#ef5350', .06, .06, .03, g); w.ball(.06, '#fff176', -.06, .05, -.02, g) }
     return g;
@@ -138,7 +138,8 @@ function startVet3D2(root) {
   CAMS.head.p[1] = Math.max(CAMS.head.p[1], headWY + .35);
   CAMS.heart.l[1] = Math.max(CAMS.heart.l[1], bodyWY);
   CAMS.heart.p[1] = Math.max(CAMS.heart.p[1], bodyWY + .6);
-  if (A.neck) { CAMS.body.p = [1.2, 2.9, 4.4]; CAMS.body.l[1] = Math.min(headWY, 2.2) } // ג'ירפה: גם הראש בפריים במצלמת הגוף
+  if (A.neck) { CAMS.body.p = [1.2, 2.9, 4.4]; CAMS.body.l[1] = Math.min(headWY, 2.2); // ג'ירפה: גם הראש בפריים במצלמת הגוף
+    CAMS.head.p = [1.3, 3.3, 7.6]; CAMS.head.l = [0.3, 2.0, -0.2] } // ג'ירפה: מצלמת ראש רחבה — מצח ומגש כלי שניהם בפריים (נמדד 1280/390)
   let stage = 0, stageObjs = [], stageDrags = [], stageTargets = [], stageRubs = [], stageTweens = [], stageDom = [];
   const draggables = w._drags, targets = w._tgts, rubs = w._rubs;
   function clearGroup(arr) { arr.forEach(o => { o.parent && o.parent.remove(o) }); arr.length = 0 }
@@ -167,7 +168,7 @@ function startVet3D2(root) {
 
   // כתמי שריטה וכתמי לכלוך — נוצרים פעם אחת על הגוף, מוסתרים בין שלבים
   const scratchMeshes = [], dirtMeshes = [];
-  [[-.2, .3, .3], [.18, .18, .33], [0, .5, .28]].forEach(p => {
+  [[-.2, .3, .3], [.18, .18, .33], [.05, .38, .33]].forEach(p => { // השריטה השלישית הורדה — הטבעת הוסתרה מאחורי הראש/באנר ב-1280
     const s = w.ball(.07 * S, '#e57373', p[0] * S, p[1] * S, p[2] * S, bodyG, 1, 1, .4); s.visible = false; scratchMeshes.push(s);
   });
   [[.15, .5, .25], [-.14, .55, .2], [0, .68, .05]].forEach(p => {
@@ -179,6 +180,11 @@ function startVet3D2(root) {
     cleanupStage(); fly('table');
     w.banner('לטפי את רקס בעדינות', null);
     speak('רקס הכלבלב נשרט במשחק. קודם נלטף אותו כדי שירגע');
+    // רמז חזותי: טבעת כתומה עבה פועמת באזור הליטוף (תבנית התג של shop)
+    const cue = new THREE.Mesh(new THREE.TorusGeometry(.22, .07, 12, 48), new THREE.MeshBasicMaterial({ color: '#ff6d00' }));
+    cue.position.copy(furAt()); cue.position.y += .1; cue.position.z += .34; // מול הגוף — לא מוסתרת מאחורי החיה
+    scene.add(cue); stageObjs.push(cue);
+    w.onTick(() => { if (!cue.parent) return; const s = 1 + Math.sin(performance.now() / 300) * .12; cue.scale.set(s, s, s) });
     const proxy = w.group(0, 0, 0); proxy.position.copy(furAt()); stageObjs.push(proxy);
     const rub = w.registerRub(proxy, {
       needed: 600, radiusPx: 170,
@@ -244,14 +250,18 @@ function startVet3D2(root) {
     let left = n;
     spots.forEach((spot, i) => {
       const pm = plasterModel(COLS[i % 3]);
-      pm.position.set(0.85, 1.05, 0.6 + i * .28); // טור יחיד על המגש — x=1.55 יצא מהפריים ב-1100 וב-390 (כלל 27)
+      pm.scale.setScalar(1.35); // קריאות — מוצר: פלסטרים קטנים מדי
+      pm.position.set(0.43 + i * .2, 1.05, 0.88); // שורת x על השולחן — כל פלסטר נראה ונתפס בנפרד (טור z קרס ויצא מהפריים ב-1280)
       scene.add(pm); stageObjs.push(pm);
       const dr = w.makeDraggable(pm, { proxyR: .3, onPick: () => { sfx('tick'); speak('פלסטר') } });
       stageDrags.push(dr);
       const anchor = w.group(0, 0, 0); anchor.position.copy(wp(spot)); scene.add(anchor); stageObjs.push(anchor); w.noRay(anchor);
-      const tgt = w.addDropTarget(anchor, {
+      let tgt;
+      tgt = w.addDropTarget(anchor, {
         radiusPx: 130, ringR: .18, ringPos: new THREE.Vector3(0, 0, 0),
+        accepts: () => !tgt.done, // מטרה נצרכת אחרי כיסוי — QA: 3 פלסטרים התקבלו על אותה שריטה
         onDrop: (d) => {
+          tgt.done = true; tgt.ring.visible = false;
           left--; sfx('good'); d.active = false;
           d.grp.position.copy(anchor.position); d.grp.position.z += .05; // נדבק על הכתם — נשאר גלוי
           spot.visible = false;
@@ -294,6 +304,7 @@ function startVet3D2(root) {
     let left = n;
     for (let i = 0; i < n; i++) {
       const f = foodModel(A.food);
+      f.scale.setScalar(1.5); // קריאות — מוצר: האוכל זעיר וחיוור
       f.position.set(0.5 + i * .2, 1.05, 0.88); // שורה מרווחת — טור z קרס חזותית לפריט אחד
       scene.add(f); stageObjs.push(f);
       const dr = w.makeDraggable(f, { proxyR: .3, onPick: () => { sfx('tick') } });
