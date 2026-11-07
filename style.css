@@ -136,8 +136,8 @@ p.screen-sub{text-align:center;color:#7a68a0;font-size:clamp(13px,2vh,17px);marg
 .vet3d-hud{position:absolute;top:8px;left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;padding:0 10px;z-index:3}
 .vet3d-hud .instr{pointer-events:auto}
 .vet3d-paws{display:flex;gap:8px;background:rgba(255,255,255,.75);border-radius:999px;padding:4px 14px}
-.vet3d-paws .paw{font-size:clamp(17px,2.8vh,24px);opacity:.25;filter:grayscale(1);transition:all .3s}
-.vet3d-paws .paw.on{opacity:1;filter:none;transform:scale(1.2)}
+.vet3d-paws .paw{font-size:clamp(17px,2.8vh,24px);color:#c3b2e4;transition:all .3s;display:flex}
+.vet3d-paws .paw.on{color:#e0509b;transform:scale(1.25)}
 .vet3d-again{pointer-events:auto}
 .vet3d-card{border:none;border-radius:22px;padding:14px 18px;margin:0 auto 12px;display:flex;align-items:center;gap:12px;cursor:pointer;background:linear-gradient(135deg,#43a047,#81c784);color:#fff;box-shadow:0 5px 12px rgba(30,90,40,.35);animation:vet3dglow 2.2s infinite}
 .vet3d-card .v3emoji{font-size:clamp(30px,5vh,44px)}

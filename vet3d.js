@@ -175,15 +175,21 @@ function startVet3D(root){
   const grp=new THREE.Group();grp.position.set(d.x,trayY+.32,2.05);scene.add(grp);
   const m=d.mk();grp.add(m);
   const proxy=new THREE.Mesh(new THREE.SphereGeometry(.3,10,8),new THREE.MeshBasicMaterial({visible:false}));grp.add(proxy);
+  const halo=new THREE.Mesh(new THREE.CircleGeometry(.3,24),new THREE.MeshBasicMaterial({color:'#ffd54a',transparent:true,opacity:.65,depthTest:false}));
+  halo.rotation.x=-Math.PI/2;halo.position.y=-.185;halo.visible=false;halo.raycast=()=>{};grp.add(halo);tools[d.id]&&(0);
   const tag=new THREE.Mesh(new THREE.PlaneGeometry(.3,.3),new THREE.MeshBasicMaterial({map:iconTexture(d.icon),transparent:true}));
   tag.position.set(0,.42,-.12);tag.raycast=()=>{};grp.add(tag);
   grp.traverse(o=>{if(o.isMesh)o.userData.toolId=d.id});
-  tools[d.id]={grp,home:grp.position.clone(),active:false,dragging:false,icon:tag}});
+  tools[d.id]={grp,home:grp.position.clone(),active:false,dragging:false,icon:tag,halo:grp.children[grp.children.length-1]}});
 
  // טבעות מטרה זוהרות
- function targetRing(){const r=new THREE.Mesh(new THREE.TorusGeometry(.2,.035,10,32),
+ function targetRing(){const g=new THREE.Group();
+  const r=new THREE.Mesh(new THREE.TorusGeometry(.2,.035,10,32),
   new THREE.MeshBasicMaterial({color:'#ffbf00',transparent:true,opacity:1,depthTest:false}));
-  r.renderOrder=5;r.visible=false;r.userData.base=1;r.raycast=()=>{};scene.add(r);return r}
+  const disc=new THREE.Mesh(new THREE.CircleGeometry(.17,24),
+  new THREE.MeshBasicMaterial({color:'#ffdf6e',transparent:true,opacity:.3,depthTest:false}));
+  g.add(r);g.add(disc);g.renderOrder=5;g.visible=false;g.userData.base=1;
+  g.traverse(o=>o.raycast=()=>{});scene.add(g);return g}
  const rings={heart:targetRing(),head:targetRing(),scratch:targetRing(),bowl:targetRing()};
  function ringAt(ring,pos,faceCam){ring.position.copy(pos);ring.visible=true;
   if(faceCam)ring.lookAt(camera.position);else ring.rotation.x=-Math.PI/2}
@@ -209,12 +215,14 @@ function startVet3D(root){
  function chomp(){noise(.06,.3);setTimeout(()=>noise(.06,.3),160)}
 
  // ממשק על-דמיון: הוראה + התקדמות
+ const PAW_SVG='<svg viewBox="0 0 100 100" width="1em" height="1em" style="display:block"><g fill="currentColor"><ellipse cx="50" cy="70" rx="25" ry="19"/><ellipse cx="22" cy="44" rx="10" ry="13"/><ellipse cx="42" cy="33" rx="10" ry="13"/><ellipse cx="61" cy="33" rx="10" ry="13"/><ellipse cx="80" cy="46" rx="10" ry="13"/></g></svg>';
+ const SPK_SVG='<svg viewBox="0 0 100 100" width="1.05em" height="1.05em" style="display:block"><g fill="currentColor"><path d="M14 40 h18 l22 -20 v60 l-22 -20 h-18 z"/><path d="M63 38 q13 12 0 24" stroke="currentColor" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M73 27 q21 23 0 46" stroke="currentColor" stroke-width="8" fill="none" stroke-linecap="round"/></g></svg>';
  const hud=el('div','vet3d-hud');
  const instrBox=el('div','instr vet3d-instr','<span></span>');
  const instrTxt=instrBox.querySelector('span');
- const rep=el('button','','🔊');rep.setAttribute('aria-label','שמע שוב');instrBox.appendChild(rep);
+ const rep=el('button','',SPK_SVG);rep.setAttribute('aria-label','שמע שוב');instrBox.appendChild(rep);
  const paws=el('div','vet3d-paws');
- for(let i=0;i<5;i++)paws.appendChild(el('span','paw','🐾'));
+ for(let i=0;i<5;i++)paws.appendChild(el('span','paw',PAW_SVG));
  hud.appendChild(paws);hud.appendChild(instrBox);root.appendChild(hud);
  let curInstr='';
  function setInstr(t,sayIt){curInstr=t;instrTxt.textContent=t;if(sayIt!==false)speak(t)}
@@ -233,7 +241,8 @@ function startVet3D(root){
  function activeToolId(){const s=STAGES[stage];return(s==='stetho'||s==='thermo'||s==='bandage'||s==='bone')?s:null}
  function updateTools(){toolDefs.forEach(d=>{const t=tools[d.id],on=d.id===activeToolId();
   t.active=on;
-  t.grp.traverse(o=>{if(o.isMesh){o.material.transparent=true;o.material.opacity=on?1:.45}})})}
+  t.grp.traverse(o=>{if(o.isMesh&&o!==t.halo){o.material.transparent=true;o.material.opacity=on?1:.72}});
+  t.halo.visible=on;t.halo.material.opacity=.65})}
  function updateRing(){hideRings();const s=STAGES[stage];
   if(s==='stetho')ringAt(rings.heart,worldPos(body).add(new THREE.Vector3(-.1,.15,.45)),true);
   else if(s==='thermo')ringAt(rings.head,worldPos(headG).add(new THREE.Vector3(0,.32,.2)),true);
@@ -341,7 +350,7 @@ function startVet3D(root){
   speak('רקס מרגיש הרבה יותר טוב! כל הכבוד רונה!');
   try{const s=JSON.parse(localStorage.getItem('ronaRoleplay.v1'))||{};s.vet3d={visits:((s.vet3d||{}).visits||0)+1};localStorage.setItem('ronaRoleplay.v1',JSON.stringify(s))}catch(e){}
   setInstr('רקס מרגיש הרבה יותר טוב!',false);
-  const again=el('button','big-btn vet3d-again','🔁 שחקי שוב');
+  const again=el('button','big-btn vet3d-again','<svg viewBox="0 0 100 100" width="1em" height="1em" style="display:inline-block;vertical-align:-2px"><g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round"><path d="M78 50 a28 28 0 1 1 -10 -21"/><path d="M71 11 v20 h-20"/></g></svg> שחקי שוב');
   again.onclick=()=>{cleanup();root.innerHTML='';startVet3DInto(root)};
   hud.appendChild(again)}
 
@@ -376,7 +385,8 @@ function startVet3D(root){
    if(tl.active&&!tl.dragging&&tl.grp.visible){tl.grp.position.y=tl.home.y+Math.sin(t*3.2)*.045;
     const p=1+Math.sin(t*3.2)*.03;tl.grp.scale.set(p,p,p)}});
   // טבעות פועמות
-  Object.values(rings).forEach(r=>{if(r.visible){const p=(r.userData.base||1)*(1+Math.sin(t*4)*.13);r.scale.set(p,p,p);r.material.opacity=.65+Math.sin(t*4)*.3}});
+  Object.values(rings).forEach(r=>{if(r.visible){const p=(r.userData.base||1)*(1+Math.sin(t*4)*.13);r.scale.set(p,p,p)}});
+  toolDefs.forEach(d=>{const h=tools[d.id].halo;if(h.visible){const p=1+Math.sin(t*3.2)*.18;h.scale.set(p,p,p);h.material.opacity=.45+Math.sin(t*3.2)*.25}});
   // ניצוצות
   for(let i=sparks.length-1;i>=0;i--){const s=sparks[i];s.life-=dt*1.3;
    s.m.position.addScaledVector(s.v,dt);s.v.y-=dt*2.2;s.m.scale.multiplyScalar(1-dt*1.1);
