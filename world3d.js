@@ -164,7 +164,9 @@ function startWorld3D(root, opts) {
   renderer.domElement.addEventListener('pointerdown', ev => {
     setPtr(ev); ray.setFromCamera(ptr, camera);
     const hits = ray.intersectObjects(draggables.filter(d => d.active).map(d => d.grp), true);
-    const d = hits.length ? (hits[0].object.userData.drag || hits[0].object.parent && hits[0].object.parent.userData.drag) : null;
+    // מיפוי פגיעה לרשומת הגרירה דרך שרשרת האבות (ילדים מקוננים)
+    let d = null;
+    if (hits.length) { let o = hits[0].object; while (o && !d) { d = o.userData.drag || null; o = o.parent } }
     if (d) {
       dragCur = d; d.dragging = true; downPos = { x: ev.clientX, y: ev.clientY, z: d.grp.position.z };
       if (d.onPick) d.onPick(d);
@@ -253,7 +255,7 @@ function startWorld3D(root, opts) {
     mat, box, ball, cyl, group, noRay, buildRoom,
     banner, progressInit, progressStep, endPanel,
     makeDraggable, addDropTarget, setActiveTool, registerRub, screenPos, onTick, getProgress, saveProgress,
-    camBase, camLook,
+    camBase, camLook, _drags: draggables, _tgts: targets,
     dispose() { alive = false; removeEventListener('resize', onRes); renderer.dispose(); root.innerHTML = '' }
   };
   root._world3d = api; // debug handle לבדיקות e2e
