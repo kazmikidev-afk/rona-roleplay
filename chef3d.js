@@ -65,7 +65,7 @@ function startChef3D(root) {
   function counterOff() { if (cntEl) { cntEl.remove(); cntEl = null } }
   if (!document.getElementById('chef-style')) {
     const st = document.createElement('style'); st.id = 'chef-style';
-    st.textContent = '.chef-cnt{display:flex;gap:8px;background:rgba(255,255,255,.9);border-radius:14px;padding:6px 12px;pointer-events:none}.chef-cnt span{width:18px;height:18px;border-radius:50%;background:#d7ccc8;border:2px solid #8d6e63}.chef-cnt span.on{background:#43a047;border-color:#2e7d32}'
+    st.textContent = '.chef-hint{position:absolute;pointer-events:none;transform:translate(-50%,-50%);z-index:5;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}.chef-cnt{display:flex;gap:8px;background:rgba(255,255,255,.9);border-radius:14px;padding:6px 12px;pointer-events:none}.chef-cnt span{width:18px;height:18px;border-radius:50%;background:#d7ccc8;border:2px solid #8d6e63}.chef-cnt span.on{background:#43a047;border-color:#2e7d32}'
       + '.chef-lbl.pulse{animation:chefp .5s infinite alternate}@keyframes chefp{to{transform:translate(-50%,0) scale(1.18)}}.chef-lbl{position:absolute;pointer-events:auto;transform:translate(-50%,0);display:flex;align-items:center;gap:6px;border:3px solid #fff;border-radius:16px;padding:6px 12px;font-weight:800;font-size:clamp(15px,2.4vh,19px);color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.3);white-space:nowrap;cursor:pointer}';
     document.head.appendChild(st);
   }
@@ -76,7 +76,7 @@ function startChef3D(root) {
   const prog = w.getProgress('chef3d') || { visits: 0, stars: 0 };
 
   // ---------- המטבח ----------
-  w.buildRoom({ floor: '#e8a558', wallA: '#ffd9a0', wallB: '#b7e4c7' });
+  w.buildRoom({ floor: '#b9702a', wallA: '#ff9a4d', wallB: '#2fbf8f' });
   // שיש אחורי + כיריים + כיור
   w.box(6.4, .9, .9, '#8d6e63', 0, .45, -3.3);           // ארונות
   w.box(6.6, .12, 1.05, '#fdf6ee', 0, .96, -3.3);        // משטח
@@ -104,7 +104,7 @@ function startChef3D(root) {
   w.cyl(.42, .32, .35, '#c98d4b', 0, .17, 0, basket);
   w.cyl(.36, .36, .04, '#8d5a2b', 0, .3, 0, basket);
   // חלון הזמנות
-  const ticket = w.group(-2.2, 2.4, -4.25);
+  const ticket = w.group(-2.0, 2.1, -3.9); ticket.scale.setScalar(1.35);
   w.box(1.5, 1, .1, '#fff', 0, 0, 0, ticket);
   w.box(1.3, .25, .12, '#ff5e8a', 0, .4, 0, ticket);
   // שולחן לקוח
@@ -184,8 +184,12 @@ function startChef3D(root) {
   ];
   function setStage(i) {
     stage = i; stopAll(); basket.visible = (i === 1); // הסל רק בשלב האיסוף — לא חוסם את הצלחת/הקערה
-    const c = CAMS[i]; if (c) w.flyTo(c.p[0], c.p[1], c.p[2], c.l[0], c.l[1], c.l[2]);
-    ticks.length = 0;
+    const c = CAMS[i];
+    if (c) { // מסכים גבוהים וצרים (יחס < .55): מרחיקים עוד את המצלמה כדי שהקצוות לא ייחתכו
+      const asp = w.root.clientWidth / Math.max(1, w.root.clientHeight), k = asp < .55 ? 1.22 : 1;
+      w.flyTo(c.l[0] + (c.p[0] - c.l[0]) * k, c.l[1] + (c.p[1] - c.l[1]) * k, c.l[2] + (c.p[2] - c.l[2]) * k, c.l[0], c.l[1], c.l[2]);
+    }
+    ticks.length = 0; ticks.push(blobTick);
     [stageRecipe, stageGather, stageChop, stageSteps, stageServe, stageSort, stageDone][i]();
   }
   function clearGroup(arr) { arr.forEach(o => { o.parent && o.parent.remove(o) }); arr.length = 0 }
@@ -193,7 +197,7 @@ function startChef3D(root) {
   // כלי/חפצים נגררים כלליים
   let stageObjs = [], stageDrags = [], stageTargets = [];
   function cleanupStage() {
-    counterOff(); document.querySelectorAll('.chef-lbl').forEach(e => e.remove());
+    counterOff(); document.querySelectorAll('.chef-lbl,.chef-hint').forEach(e => e.remove());
     clearGroup(stageObjs);
     stageDrags.forEach(d => { const i = draggables.indexOf(d); if (i >= 0) draggables.splice(i, 1) });
     stageTargets.forEach(t => { if (t.ring) t.ring.visible = false; const i = targets.indexOf(t); if (i >= 0) targets.splice(i, 1) }); // מסתיר טבעות ישנות — לא להשאיר רמזי רפאים
@@ -207,6 +211,9 @@ function startChef3D(root) {
     banner('בחרי מה מכינים היום במטבח', null);
     if (!freestyle) speak('בחרי מה מכינים היום במטבח', () => speak('הלקוחה ביקשה ' + dish.name + '!'));
     else speak('בחרי מה מכינים היום במטבח');
+    if (!freestyle) { // תמונת המנה המבוקשת על פתק ההזמנה - לילדה שלא קוראת
+      const pic = vegModel(dish.id, ticket); pic.position.set(0, -.28, .1); pic.scale.setScalar(2.5); stageObjs.push(pic);
+    }
     const stand = w.group(-2.2, 0, 1.2); stageObjs.push(stand);
     w.box(2.6, .8, .9, '#8d6e63', 0, .4, 0, stand);
     w.box(2.8, .1, 1, '#fdf6ee', 0, .85, 0, stand);
@@ -288,27 +295,53 @@ function startChef3D(root) {
   // ---------- שלב 2: קיצוץ ----------
   function stageChop() {
     cleanupStage();
+    const CHOP = ['tomato', 'cucumber', 'carrot', 'lettuce', 'corn', 'apple', 'strawberry', 'banana', 'cheese'];
+    const VEG = ['tomato', 'cucumber', 'carrot', 'lettuce', 'corn'];
+    let items = dish.ings.slice(0, 2 + lvl).filter(k => CHOP.includes(k));
+    if (!items.length) items = dish.ings.slice(0, 1);
     banner('קוצצים', null);
-    speak('קוצצים', () => speak('קצצי את הירקות על הקרש'));
-    const items = dish.ings.slice(0, 2 + lvl);
+    // המשפט "ירקות" רק כשכל הפריטים ירקות; אחרת רק "קוצצים" + רמז חזותי (אין קליפ כללי אחר)
+    if (items.every(k => VEG.includes(k))) speak('קוצצים', () => speak('קצצי את הירקות על הקרש'));
+    else speak('קוצצים');
     let chopped = 0;
     counter(items.length, 0);
-    const rubs = [];
+    const rubs = [], active = [];
+    // סכין צעצוע (משחק בלבד) מעל הפריט הפעיל + יד מחווה
+    const knife = w.group(0, 1.5, 2.1); stageObjs.push(knife);
+    w.box(.5, .05, .12, '#cfd8dc', .12, 0, 0, knife); w.box(.22, .07, .13, '#6d4c41', -.25, 0, 0, knife);
+    const hint = document.createElement('div'); hint.className = 'chef-hint';
+    hint.innerHTML = '<svg viewBox="0 0 48 48" width="48" height="48"><path d="M20 40c-4-2-8-8-8-14 0-3 3-3 4-1l2 3V10c0-3 5-3 5 0v14l1-6c1-3 5-2 5 1l1 5 1-3c1-2 4-1 4 1v8c0 6-4 11-9 11h-2z" fill="#fff" stroke="#5d4037" stroke-width="2.5" stroke-linejoin="round"/></svg>';
+    w.root.appendChild(hint); const _cl = () => hint.remove(); stageObjs.push({ parent: { remove: _cl } });
+    let hintOn = true;
     items.forEach((k, i) => {
-      const it = vegModel(k, scene); it.position.set(-1.2 + (i - (items.length - 1) / 2) * .62, .95, 2.1); stageObjs.push(it);
+      const it = vegModel(k, scene); const px = -.85 + (i - (items.length - 1) / 2) * .6; it.position.set(px, .95, 2.1); stageObjs.push(it);
+      let col = '#e0e0e0'; it.traverse(o => { if (o.isMesh && o.material && col === '#e0e0e0') col = '#' + o.material.color.getHexString() });
+      const pieces = [];
+      for (let q = 0; q < 3; q++) { const pc = w.cyl(.07, .07, .035, col, px - .18 + q * .18, .97, 2.55, scene); pc.visible = false; pieces.push(pc); stageObjs.push(pc) }
+      active.push({ it, pieces, done: false });
       const r = w.registerRub(it, {
         needed: 260, radiusPx: 90,
-        onProgress: (p) => { it.scale.setScalar(1 - p * .4); it.rotation.y += .1; sfx('tick') },
+        onProgress: (p) => {
+          hintOn = false; it.scale.setScalar(1 - p * .4); it.rotation.y += .1; sfx('tick');
+          pieces.forEach((pc, q) => { pc.visible = p > (q + 1) / 3.2 });
+        },
         onDone: () => {
           chopped++; counterSet(chopped); sfx('good'); fb('' + chopped);
-          it.visible = false;
+          it.visible = false; pieces.forEach(pc => { pc.visible = true }); active.find(a => a.it === it).done = true;
           if (chopped >= items.length) {
-            fb('יופי! בחרת נכון'); // generic praise exists; use exact existing clip
+            fb('יופי! בחרת נכון');
             w.progressStep(); setTimeout(() => setStage(3), 1400);
           }
         }
       });
       rubs.push(r);
+    });
+    w.onTick((t) => {
+      const cur = active.find(a => !a.done); if (!cur) { knife.visible = false; hint.style.display = 'none'; return }
+      knife.position.set(cur.it.position.x, 1.45 + Math.abs(Math.sin(t * 6)) * .18, cur.it.position.z + .1); knife.rotation.z = -.5;
+      const sp = w.screenPos(cur.it);
+      hint.style.display = hintOn ? 'block' : 'none';
+      hint.style.left = (sp.x + Math.sin(t * 4) * 28) + 'px'; hint.style.top = (sp.y - 10) + 'px';
     });
   }
 
@@ -450,6 +483,14 @@ function startChef3D(root) {
     fb('הלקוחה מאושרת! את שפית אלופה!');
   }
 
+  const blob = new THREE.Mesh(new THREE.CircleGeometry(.32, 24), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: .28 }));
+  blob.rotation.x = -Math.PI / 2; blob.visible = false; scene.add(blob);
+  const blobTick = () => {
+    const d = w._drags.find(x => x.dragging);
+    if (!d) { blob.visible = false; return }
+    blob.visible = true; blob.position.set(d.grp.position.x, .96, d.grp.position.z);
+    const h = Math.max(0, d.grp.position.y - .95); blob.scale.setScalar(1 + h * .5); blob.material.opacity = Math.max(.12, .3 - h * .1);
+  };
   const ticks = [];
   const origOnTick = w.onTick;
   w.onTick = (fn) => ticks.push(fn);
