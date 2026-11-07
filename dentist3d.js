@@ -55,15 +55,51 @@ function startDentist3D(root) {
   const pot = w.group(2.9, 0, -3.6); w.cyl(.22, .16, .4, '#e08e5a', 0, .2, 0, pot); w.ball(.4, '#66bb6a', 0, .68, 0, pot, 1, .9, 1); w.noRay(pot);
 
   // ---------- המטופלת (דמות מסתובבת — צבע לפי ביקור) ----------
-  const CUST_COLORS = ['#f4a460', '#b57edc', '#90caf9', '#a5d6a7', '#f48fb1', '#ffe082', '#ffab91'];
-  const pcol = CUST_COLORS[prog.visits % CUST_COLORS.length];
+  // זיהוי מין אמיתי (QA: חתולה/פיל היו אותו דוב בצבע אחר) — תכונות ראש לפי מין, לא תווית בלבד
+  const SPECIES = {
+    'לולה החתולה': { col: '#b0bec5', feat: 'cat' },
+    'דני הארנב': { col: '#efe9dd', feat: 'rabbit' },
+    'ברי הדובי': { col: '#a1887f', feat: 'bear' },
+    'נוני הינשופית': { col: '#bcaaa4', feat: 'owl' },
+    'טדי הצב': { col: '#a5d6a7', feat: 'turtle' },
+    'ממי הקופית': { col: '#bc8f6f', feat: 'monkey' },
+    'תני התנין': { col: '#7cb342', feat: 'croc' },
+    'פילי הפיל': { col: '#b0bec5', feat: 'elephant' },
+    'פיפי התוכי': { col: '#4fc3f7', feat: 'parrot' },
+    'ליאו האריה': { col: '#ffb74d', feat: 'lion' },
+    'רקס הכלב': { col: '#c8956c', feat: 'dog' }
+  };
+  const GIRLS = ['נועה הביישנית', 'מאי מלאת המרץ', 'טלי', 'דנה', 'יעלה הבמאית', 'סבתא שרה'];
+  const SKIN = ['#ffdfc4', '#f1c27d', '#e0ac69'];
+  const HAIR = ['#4e342e', '#795548', '#f9a825', '#263238'];
+  const SP = SPECIES[cust.c[1]] || null;
+  const pcol = SP ? SP.col : SKIN[prog.visits % SKIN.length];
+  const hairC = HAIR[prog.visits % HAIR.length];
   const patient = w.group(0, 0, -0.55);
   w.ball(.48, pcol, 0, 1.05, -.15, patient, 1, 1.05, .9);       // גוף יושב
   w.ball(.16, pcol, -.42, 1.0, -.05, patient, .7, 1.2, .7);     // זרועות
   w.ball(.16, pcol, .42, 1.0, -.05, patient, .7, 1.2, .7);
   const headG = w.group(0, 1.78, .02, patient);
   w.ball(.5, pcol, 0, 0, -.04, headG, 1, .95, .92);
-  w.ball(.12, pcol, -.3, .42, -.05, headG); w.ball(.12, pcol, .3, .42, -.05, headG); // אוזניים
+  // תכונות מין על הראש (הפה נשאר פתוח ונראה — אף תכונה לא מכסה אותו)
+  const feat = SP ? SP.feat : 'human';
+  if (feat === 'bear') { w.ball(.12, pcol, -.3, .42, -.05, headG); w.ball(.12, pcol, .3, .42, -.05, headG) }
+  if (feat === 'cat') {
+    w.cyl(.01, .13, .3, pcol, -.28, .45, -.02, headG).rotation.z = .3; w.cyl(.01, .13, .3, pcol, .28, .45, -.02, headG).rotation.z = -.3; // אוזניים משולשות
+    [-.1, 0, .1].forEach(dy => { const wsk1 = w.box(.22, .015, .015, '#eceff1', -.48, -.08 + dy, .3, headG); wsk1.rotation.z = dy * 2; const wsk2 = w.box(.22, .015, .015, '#eceff1', .48, -.08 + dy, .3, headG); wsk2.rotation.z = -dy * 2 }); // שפם
+  }
+  if (feat === 'rabbit') { w.ball(.09, pcol, -.16, .62, -.02, headG, .5, 2.8, .7); w.ball(.09, pcol, .16, .62, -.02, headG, .5, 2.8, .7); w.ball(.05, '#f8bbd0', -.16, .6, .04, headG, .35, 2.4, .5); w.ball(.05, '#f8bbd0', .16, .6, .04, headG, .35, 2.4, .5) }
+  if (feat === 'owl') { w.cyl(.01, .1, .22, pcol, -.26, .5, 0, headG).rotation.z = .5; w.cyl(.01, .1, .22, pcol, .26, .5, 0, headG).rotation.z = -.5; const bk = w.cyl(.01, .07, .14, '#ff9800', 0, .08, .46, headG); bk.rotation.x = Math.PI / 2 } // ציצות נוצות + מקור קטן מעל הפה
+  if (feat === 'monkey') { w.ball(.16, pcol, -.44, .05, 0, headG, .5, 1, .8); w.ball(.16, pcol, .44, .05, 0, headG, .5, 1, .8); w.ball(.3, '#d7ccc8', 0, -.02, .2, headG, 1, .9, .7) } // אוזניים גדולות + פרצוף בהיר
+  if (feat === 'croc') { w.ball(.06, '#558b2f', -.12, .32, .3, headG); w.ball(.06, '#558b2f', .12, .32, .3, headG); [-.16, 0, .16].forEach(dx => w.ball(.05, '#558b2f', dx, .48, -.1, headG)) } // נחיריים + גבשושיות גב
+  if (feat === 'elephant') { w.ball(.3, pcol, -.52, .1, -.05, headG, .35, 1, .8); w.ball(.3, pcol, .52, .1, -.05, headG, .35, 1, .8); const tr = w.cyl(.07, .09, .42, pcol, 0, .3, .38, headG); tr.rotation.x = -.5; w.ball(.08, pcol, 0, .48, .48, headG) } // אוזניים ענק + חדק קצר כלפי מעלה
+  if (feat === 'parrot') { const bk = w.cyl(.02, .1, .2, '#ff9800', 0, .06, .44, headG); bk.rotation.x = Math.PI / 2; [-.1, 0, .1].forEach((dx, i) => { const f = w.cyl(.01, .06, .22, ['#0288d1', '#ffeb3b', '#0288d1'][i], dx, .52, -.05, headG); f.rotation.z = dx * 2 }) } // מקור + ציצת נוצות
+  if (feat === 'lion') { for (let a = 0; a < 8; a++) { const th = a / 8 * Math.PI * 2; w.ball(.14, '#e65100', Math.cos(th) * .42, Math.sin(th) * .42 + .02, -.18, headG) } } // רעמה
+  if (feat === 'dog') { const l = w.ball(.13, '#8d6e4a', -.38, .25, 0, headG, .6, 1.6, .7); l.rotation.z = .5; const r = w.ball(.13, '#8d6e4a', .38, .25, 0, headG, .6, 1.6, .7); r.rotation.z = -.5 } // אוזניים שמוטות
+  if (feat === 'human') {
+    w.ball(.46, hairC, 0, .16, -.12, headG, 1.05, .8, .95); // קערת שיער
+    if (GIRLS.includes(cust.c[1])) { w.ball(.11, hairC, -.44, .18, -.05, headG); w.ball(.11, hairC, .44, .18, -.05, headG) } // קוקו
+  }
   w.ball(.06, '#3e2723', -.17, .12, .42, headG); w.ball(.06, '#3e2723', .17, .12, .42, headG); // עיניים
   w.ball(.05, '#f8bbd0', -.3, -.05, .35, headG, 1, .7, .5); w.ball(.05, '#f8bbd0', .3, -.05, .35, headG, 1, .7, .5); // לחיים
   // הפה הפתוח — מרכז האינטראקציה
@@ -165,6 +201,7 @@ function startDentist3D(root) {
     stageRubs.forEach(r => { const i = rubs.indexOf(r); if (i >= 0) rubs.splice(i, 1) });
     stageDrags = []; stageTargets = []; stageRubs = []; stageTweens = [];
     TEETH.forEach(t => { t.m.material.color.copy(t.base); t.m.material.emissive = new THREE.Color('#000000'); t.m.material.emissiveIntensity = 0; t.m.visible = true; t.m.scale.set(1, 1, 1); t.m.rotation.z = 0 });
+    cup.position.set(-1.55, 0, 0.5); cupAnchor.position.set(-1.55, 1.28, 0.5); // מחוץ לפריים מצלמת הפה — רק toolpick מקרב (QA: טבעת מחוץ למסך במובייל)
   }
   function shuffled(a) { return a.slice().sort(() => Math.random() - .5) }
   // הקשה על שן: הגריר חייב להיות ילד ישיר של scene — world3d לוכד z מיקום מקומי למישור הגרירה,
@@ -198,6 +235,7 @@ function startDentist3D(root) {
   // ---------- toolpick: בחירת מברשת ומשחה ----------
   function stageToolpick(diff) {
     cleanupStage(); fly('tray');
+    cup.position.set(-0.35, 0, 0.7); cupAnchor.position.set(-0.35, 1.28, 0.7); // בפריים 390x844 עם שוליים (הוקרן: x=74-86)
     w.banner('מה צריך לצחצח שיניים?', null);
     speak('בחרי מברשת ומשחה כדי לנקות את השיניים');
     const defs = [
@@ -212,25 +250,34 @@ function startDentist3D(root) {
     row.forEach((d, i) => {
       const m = d.mk(); m.position.set(-0.5 + i * (1.0 / Math.max(1, row.length - 1)) * 1.0 + 0.0, 1.05, 0);
       m.position.x = (i - (row.length - 1) / 2) * .27; // צפוף יותר — כל החריצים נראים במובייל
+      m.rotation.set(-.35, -.6, 0); // מוצר: מברשת קצה-אל-קדמית נראתה כקובייה ורודה — זווית קריאה
       tray.add(m); stageObjs.push(m);
       const dr = w.makeDraggable(m, { proxyR: .3, onPick: () => { sfx('tick'); speak(d.n) } }); // home = מיקום סופי (נוצר אחרי פיזור)
       dr.userData = { tool: d.id, good: d.good };
       stageDrags.push(dr);
     });
+    const dropTool = (d) => {
+      if (d.userData.good) {
+        got++; sfx('good'); speak('נכון!');
+        d.active = false;
+        // נחיתה נראית: הכלי נשען על שידת הכלים — נשאר בסצנה
+        const m = d.grp; tray.remove(m); scene.add(m); stageObjs.push(m);
+        m.position.set(-2.15 + (landedTools % 2) * .35, 1.15, -2.5 + Math.floor(landedTools / 2) * .25); landedTools++;
+        if (got >= need) { speak('יופי! יש מברשת ומשחה'); nextStage(); }
+      } else { sfx('oops'); speak('זה לא הפריט הנכון. נסי שוב!'); d.grp.position.copy(d.home) }
+    };
     const tgt = w.addDropTarget(cupAnchor, {
       radiusPx: 150, ringR: .3, ringParent: cup, ringPos: new THREE.Vector3(0, 1.3, 0),
-      onDrop: (d) => {
-        if (d.userData.good) {
-          got++; sfx('good'); speak('נכון!');
-          d.active = false;
-          // נחיתה נראית: הכלי נשען על שידת הכלים — נשאר בסצנה
-          const m = d.grp; tray.remove(m); scene.add(m); stageObjs.push(m);
-          m.position.set(-2.15 + (landedTools % 2) * .35, 1.15, -2.5 + Math.floor(landedTools / 2) * .25); landedTools++;
-          if (got >= need) { speak('יופי! יש מברשת ומשחה'); nextStage(); }
-        } else { sfx('oops'); speak('זה לא הפריט הנכון. נסי שוב!'); d.grp.position.copy(d.home) }
-      }
+      onDrop: dropTool
     });
     stageTargets.push(tgt); tgt.ring.visible = true;
+    // מוצר: הטבעת פועמת — יעד איסוף חד-משמעי; והפה עצמו גם מקבל (אינטואיציית הילדה: מברשת אל הפה)
+    const pulse = () => { if (!stageTargets.includes(tgt)) return; tw(700, k => { const s = 1 + Math.sin(k * Math.PI) * .25; tgt.ring.scale.set(s, s, s) }, pulse) };
+    pulse();
+    const mouthAnchor = w.group(0, 0, 0); const mw = new THREE.Vector3(); mouth.getWorldPosition(mw);
+    mouthAnchor.position.copy(mw); scene.add(mouthAnchor); stageObjs.push(mouthAnchor); w.noRay(mouthAnchor);
+    const tgt2 = w.addDropTarget(mouthAnchor, { radiusPx: 140, ring: false, onDrop: dropTool });
+    stageTargets.push(tgt2);
   }
 
   // ---------- brush: צחצוח במחוות על הפה ----------
@@ -286,7 +333,7 @@ function startDentist3D(root) {
     w.banner('מה טוב לשיניים?', null);
     speak('מייני: מה טוב לשיניים ומה רק קצת?');
     // סלים עם דוגמת פריט בולטת — קריא ללא-קוראים (לקח מהמיון בחנות)
-    const binGood = w.group(-1.05, 0, 2.5), binJunk = w.group(1.05, 0, 2.5); // בתוך פריים המובייל
+    const binGood = w.group(-0.8, 0, 2.5), binJunk = w.group(0.8, 0, 2.5); // גם קצה הטבעת החיצוני בפריים 390x844 (QA: טבעות נחתכו)
     [[binGood, '#43a047', 'apple'], [binJunk, '#8e24aa', 'cookie']].forEach(([b, c, cue]) => {
       w.cyl(.42, .3, .55, c, 0, .28, 0, b);
       w.cyl(.44, .44, .07, c, 0, .58, 0, b);
@@ -301,11 +348,15 @@ function startDentist3D(root) {
     const NAMES = { apple: 'תפוח', carrot: 'גזר', milk: 'חלב', cheese: 'גבינה', cookie: 'עוגייה', cake: 'עוגה', juice: 'מיץ' };
     let left = items.length;
     const landed = { good: 0, junk: 0 };
+    // שולחן ארוחה קדמי — מפריד בין פריטים נגררים (על השולחן) לדוגמאות-תמונה על הסלים (מוצר: חפיפה בלבלה cue מול פריט)
+    const lunch = w.group(0, 0, 3.65); stageObjs.push(lunch);
+    w.box(2.0, .08, .8, '#ffffff', 0, .72, 0, lunch); w.box(1.9, .05, .7, '#b3e5fc', 0, .775, 0, lunch);
+    [[-.9, -.3], [.9, -.3], [-.9, .3], [.9, .3]].forEach(p => w.cyl(.04, .04, .72, '#90a4ae', p[0], .36, p[1], lunch));
     items.forEach((it, i) => {
       const m = snackModel(it.k); m.scale.setScalar(1.15);
-      // שורה קדמית לפני הסלים — עד 4 ברוחב; שורה שנייה מוגבהת (לא מאחורה — חפיפה בהיטל שובשה בחירה, נמצא ב-e2e)
+      // שורה קדמית על שולחן הארוחה — עד 4 ברוחב; שורה שנייה מוגבהת (לא מאחורה — חפיפה בהיטל שובשה בחירה, נמצא ב-e2e)
       const back = i >= 4;
-      m.position.set(((i % 4) - Math.min(items.length, 4) / 2 + .5) * .5, back ? 1.5 : .95, back ? 3.35 : 3.45);
+      m.position.set(((i % 4) - Math.min(items.length, 4) / 2 + .5) * .5, back ? 1.45 : .95, back ? 3.5 : 3.65);
       scene.add(m); stageObjs.push(m);
       const dr = w.makeDraggable(m, { proxyR: .3, onPick: () => { sfx('tick'); speak(NAMES[it.k]) } }); // home = מיקום סופי
       dr.userData = { snack: it.k, good: it.good };
@@ -314,7 +365,7 @@ function startDentist3D(root) {
     [[binGood, true], [binJunk, false]].forEach(([bin, isGood]) => {
       const anchor = w.group(0, 0, 0); anchor.position.set(bin.position.x, .75, bin.position.z); scene.add(anchor); stageObjs.push(anchor); w.noRay(anchor);
       const t = w.addDropTarget(anchor, {
-        radiusPx: 160, ringR: .5, ringParent: bin, ringPos: new THREE.Vector3(0, .72, 0), ringRot: { x: Math.PI / 2 },
+        radiusPx: 160, ringR: .42, ringParent: bin, ringPos: new THREE.Vector3(0, .72, 0), ringRot: { x: Math.PI / 2 },
         accepts: () => true,
         onDrop: (d) => {
           if (d.userData.good === isGood) {
@@ -375,6 +426,7 @@ function startDentist3D(root) {
     w.banner('כמה שיניים יש?', null);
     speak('ספרי בקול את השיניים הגדולות!');
     let counted = 0;
+    TEETH.forEach((t, i) => { t.m.visible = i < n }); // QA: 8 שיניים נראו אבל רק 6 נספרו — הנראות = הנספרות
     const countable = TEETH.slice(0, n);
     countable.forEach((t) => {
       const state = { counted: false };
@@ -406,6 +458,11 @@ function startDentist3D(root) {
     stage = i;
     if (i >= ACTS.length) { stageDone(); return }
     BUILDERS[ACTS[i]](DIFF[ACTS[i]] || 1);
+    const myStage = i;
+    setTimeout(() => { // מוצר: גרירה מוקדמת בזמן טיסת מצלמה נפסלת — פעימת "מוכן" על הגרירים אחרי התייצבות
+      if (stage !== myStage) return;
+      stageDrags.forEach(d => { const g = d.grp; const s0 = g.scale.x || 1; tw(500, k => { const s = s0 * (1 + Math.sin(k * Math.PI) * .18); g.scale.setScalar(s) }) });
+    }, 750);
   }
   w.progressInit(ACTS.length);
 
