@@ -2,7 +2,9 @@
 const LS_KEY='ronaRoleplay.v1';
 let STATE={unlocked:{},done:{},badges:{},choices:{},fresh:{},muted:false};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(LS_KEY));if(s)STATE=Object.assign(STATE,s)}catch(e){}}
-function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(STATE))}catch(e){}}
+function saveState(){try{const prev=JSON.parse(localStorage.getItem(LS_KEY));
+ // שומרים גם שדות לא מוכרים שנכתבו לאחסון (למשל vet3d.visits או סצנות עתידיות) - אחרת שמירה רגילה דורסת אותם
+ localStorage.setItem(LS_KEY,JSON.stringify(prev&&typeof prev==='object'&&!Array.isArray(prev)?Object.assign({},prev,STATE):STATE))}catch(e){}}
 loadState();
 // מיגרציה: אם רמה סוימה לפני שנוספו רמות חדשות, פותחים את הבאה אוטומטית
 function normalizeState(){if(typeof ROLES==='undefined')return;ROLES.forEach(r=>{const NL=r.levels.length;let u=STATE.unlocked[r.id]||1;
@@ -116,7 +118,9 @@ function roleScreen(role,sc){
   b.onclick=()=>{if(locked){sfx('oops');speak('קודם משלימים את הרמה הקודמת');toast('משלימים קודם את רמה '+(l-1));return}
    if(isFresh){delete STATE.fresh[role.id];saveState()}
    sfx('tick');show(levelScreen.bind(null,role,l),role.name+' · רמה '+l)};lvlRow.appendChild(b)}
- if(role.id==='vet'){const c3=el('button','vet3d-card','<span class="v3emoji">🐶</span><span class="v3txt">✨ חדש! ביקור תלת-ממדי במרפאה</span>');
+ if(role.id==='vet'){const v3v=(STATE.vet3d&&STATE.vet3d.visits)||0;
+  const c3=el('button','vet3d-card','<span class="v3emoji">🐶</span><span class="v3txt">✨ '+(v3v?'ביקור תלת-ממדי במרפאה':'חדש! ביקור תלת-ממדי במרפאה')+'</span>');
+  if(v3v>0)c3.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v3v,5))+(v3v>5?' ×'+v3v:'')));
   c3.onclick=()=>{sfx('tick');openVet3D()};sc.appendChild(c3)}
  sc.appendChild(lvlRow);
  const done=(STATE.done[role.id]||{})[unl]||{};

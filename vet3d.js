@@ -1,5 +1,5 @@
 // ביקור תלת-ממדי אצל הוטרינרית - סצנת WebGL אמיתית (Three.js) עם גרירת חפצים למקומם.
-// נכנס דרך startVet3D(container) ומחזיר פונקציית ניקוי. מסתמך על speak/sfx/tone/noise/ac/floaty/confettiBurst/el מ-app.js
+// נכנס דרך startVet3D(container) ומחזיר פונקציית ניקוי. מסתמך על speak/sfx/tone/noise/floaty/confettiBurst/toast/el/STATE/saveState/LS_KEY מ-app.js
 function startVet3D(root){
  if(typeof THREE==='undefined'){root.appendChild(el('p','screen-sub','התלת-ממד לא נטען. נסי לרענן'));return null}
  let renderer;
@@ -10,32 +10,35 @@ function startVet3D(root){
  renderer.setSize(W(),H());
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
  renderer.outputEncoding=THREE.sRGBEncoding;
- renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.92;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;
  renderer.domElement.className='vet3d-canvas';
  root.appendChild(renderer.domElement);
 
  const scene=new THREE.Scene();
- scene.background=new THREE.Color('#a9e2cb');
- scene.fog=new THREE.Fog('#a9e2cb',14,30);
+ scene.background=new THREE.Color('#7fd2b6');
+ scene.fog=new THREE.Fog('#7fd2b6',16,32);
 
  const camera=new THREE.PerspectiveCamera(40,W()/H(),.1,60);
- const camBase=new THREE.Vector3(0,2.45,6.2),camLook=new THREE.Vector3(0,1.35,0);
+ const camBase=new THREE.Vector3(0,2.45,6.2);
+ // נקודת המבט משתנה לפי שלב - המצלמה מכוונת תשומת לב לדמות או למטרה הרלוונטית
+ const lookCur=new THREE.Vector3(0,1.6,.15),lookTarget=new THREE.Vector3(0,1.6,.15);
+ let parF=.55;
  function fitCam(){const a=W()/H();
-  if(a<.75){camBase.set(0,2.7,8.6);camera.fov=48}
-  else if(a<1.1){camBase.set(0,2.55,7.4);camera.fov=44}
-  else{camBase.set(0,2.45,6.2);camera.fov=40}
+  if(a<.75){camBase.set(0,2.6,9.4);camera.fov=52;parF=.3}
+  else if(a<1.1){camBase.set(0,2.5,7.6);camera.fov=46;parF=.45}
+  else{camBase.set(0,2.45,6.2);camera.fov=40;parF=.55}
   camera.aspect=a;camera.updateProjectionMatrix()}
  fitCam();
- camera.position.copy(camBase);camera.lookAt(camLook);
+ camera.position.copy(camBase);camera.lookAt(lookCur);
 
  // תאורה: שמש חמה + מילוי רך
- const hemi=new THREE.HemisphereLight('#fff7ea','#d9b8a0',.5);scene.add(hemi);
- const sun=new THREE.DirectionalLight('#fff1da',1.3);
+ const hemi=new THREE.HemisphereLight('#fff7ea','#d9b8a0',.55);scene.add(hemi);
+ const sun=new THREE.DirectionalLight('#fff1da',1.15);
  sun.position.set(3.6,6.5,4.2);sun.castShadow=true;
  sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-6;sun.shadow.camera.right=6;
  sun.shadow.camera.top=7;sun.shadow.camera.bottom=-3;sun.shadow.camera.far=20;sun.shadow.bias=-.0004;
  scene.add(sun);
- const fill=new THREE.DirectionalLight('#cfe4ff',.28);fill.position.set(-4.5,3,2.5);scene.add(fill);
+ const fill=new THREE.DirectionalLight('#cfe4ff',.25);fill.position.set(-4.5,3,2.5);scene.add(fill);
 
  function mat(c,r){return new THREE.MeshStandardMaterial({color:c,roughness:r==null?.85:r,metalness:0})}
  function box(w,h,d,c,x,y,z,parent){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(c));m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;(parent||scene).add(m);return m}
@@ -45,17 +48,17 @@ function startVet3D(root){
   m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;(parent||scene).add(m);return m}
 
  // --- החדר ---
- const floor=new THREE.Mesh(new THREE.PlaneGeometry(26,26),mat('#d99a58',.95));
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(26,26),mat('#c97f36',.95));
  floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
- const wallB=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#f5d9b8',.95));
+ const wallB=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#f3bd76',.95));
  wallB.position.set(0,5,-4.4);wallB.receiveShadow=true;scene.add(wallB);
- const wallL=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#d2eedd',.95));
+ const wallL=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#94dcb0',.95));
  wallL.rotation.y=Math.PI/2;wallL.position.set(-6.5,5,0);wallL.receiveShadow=true;scene.add(wallL);
- const wallR=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#d2eedd',.95));
+ const wallR=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#94dcb0',.95));
  wallR.rotation.y=-Math.PI/2;wallR.position.set(6.5,5,0);wallR.receiveShadow=true;scene.add(wallR);
  box(26,.22,.12,'#ffffff',0,.11,-4.34); // פנל תחתון
- const rug=cyl(2.3,2.3,.03,'#ff9fbd',0,.015,1.3,scene,40);rug.receiveShadow=true;
- cyl(1.7,1.7,.032,'#ffc2d8',0,.016,1.3,scene,40);
+ const rug=cyl(2.3,2.3,.03,'#ff8fb0',0,.015,1.3,scene,40);rug.receiveShadow=true;
+ cyl(1.7,1.7,.032,'#ffb3cd',0,.016,1.3,scene,40);
 
  // חלון עם שמש
  const winG=new THREE.Group();winG.position.set(-2.4,3,-4.34);scene.add(winG);
@@ -85,13 +88,13 @@ function startVet3D(root){
 
  // שולחן הבדיקה
  box(2.7,.16,1.6,'#ffffff',0,.95,0); // משטח
- box(2.45,.14,1.4,'#6ec3e8',0,1.06,0); // כרית
+ box(2.45,.14,1.4,'#5cb8e6',0,1.06,0); // כרית
  box(2.2,.85,1.1,'#e8eef5',0,.47,0); // ארון
  box(.5,.06,.06,'#9fb2c2',-.5,.55,.58);box(.5,.06,.06,'#9fb2c2',.5,.55,.58); // ידיות
  // מגש הכלים
  const trayY=.78;
  box(3.4,.1,.85,'#ffffff',0,trayY-.05,2.05);
- box(3.2,.05,.7,'#ffb9d4',0,trayY+.01,2.05);
+ box(3.2,.05,.7,'#ff9fc8',0,trayY+.01,2.05);
  box(3.5,.06,.95,'#dfe9f2',0,trayY-.13,2.05);
 
  // --- רקס הכלבלב ---
@@ -123,15 +126,15 @@ function startVet3D(root){
  const plaster=new THREE.Group();plaster.position.copy(scratch.position);plaster.rotation.copy(scratch.rotation);plaster.visible=false;rex.add(plaster);
  box(.17,.17,.02,'#ffe4c2',0,0,0,plaster);box(.09,.09,.025,'#f7b98d',0,0,.003,plaster);
 
- // קערת האוכל על הרצפה
- const bowlG=new THREE.Group();bowlG.position.set(1.55,0,1.35);scene.add(bowlG);
+ // קערת האוכל על השטיח, קדימה-ימינה ליד מקום העצם - גלויה במלואה גם בנייד וגם במסך רחב, לא מוסתרת על ידי המגש
+ const bowlG=new THREE.Group();bowlG.position.set(2.15,0,2.0);scene.add(bowlG);
  const bowlProf=[];for(let i=0;i<=8;i++){const t=i/8;bowlProf.push(new THREE.Vector2(.12+.3*Math.sin(t*1.45),.3*t))}
  const bowl=new THREE.Mesh(new THREE.LatheGeometry(bowlProf,26),mat('#e0556e',.6));
  bowl.castShadow=bowl.receiveShadow=true;bowlG.add(bowl);
  ball(.26,'#b5825a',0,.1,0,bowlG,1,.35,1); // מזון
 
  // --- הכלים על המגש ---
- function boneMesh(){const g=new THREE.Group();const c=mat('#fff8ec',.6);
+ function boneMesh(){const g=new THREE.Group();const c=mat('#f9db96',.55);
   const mid=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,.3,14),c);mid.rotation.z=Math.PI/2;mid.castShadow=true;g.add(mid);
   [[-.15,.05],[-.15,-.05],[.15,.05],[.15,-.05]].forEach(p=>{const s=new THREE.Mesh(new THREE.SphereGeometry(.075,16,12),c);
    s.position.set(p[0],p[1],0);s.castShadow=true;g.add(s)});
@@ -146,41 +149,47 @@ function startVet3D(root){
  function thermoMesh(){const g=new THREE.Group();
   const bodyM=new THREE.Mesh(new THREE.CylinderGeometry(.045,.045,.34,14),mat('#ffffff',.35));bodyM.castShadow=true;g.add(bodyM);
   const cap1=new THREE.Mesh(new THREE.SphereGeometry(.045,14,10),mat('#ffffff',.35));cap1.position.y=.17;g.add(cap1);
-  const bulb=new THREE.Mesh(new THREE.SphereGeometry(.055,14,10),mat('#e05555',.35));bulb.position.y=-.19;bulb.castShadow=true;g.add(bulb);
-  const line=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.2,8),mat('#e05555',.4));line.position.y=.05;g.add(line);
+  const bulb=new THREE.Mesh(new THREE.SphereGeometry(.055,14,10),mat('#e04444',.35));bulb.position.y=-.19;bulb.castShadow=true;g.add(bulb);
+  const line=new THREE.Mesh(new THREE.CylinderGeometry(.014,.014,.2,8),mat('#e04444',.4));line.position.y=.05;g.add(line);
   return g}
  function bandageMesh(){const g=new THREE.Group();
-  const roll=new THREE.Mesh(new THREE.TorusGeometry(.09,.05,14,22),mat('#f0c28a',.7));roll.rotation.x=Math.PI/2;roll.castShadow=true;g.add(roll);
-  const strip=new THREE.Mesh(new THREE.BoxGeometry(.24,.02,.1),mat('#f0c28a',.7));strip.position.set(.18,-.04,0);strip.castShadow=true;g.add(strip);
-  const pad=new THREE.Mesh(new THREE.BoxGeometry(.1,.024,.06),mat('#f7b98d',.7));pad.position.set(.14,-.03,0);g.add(pad);
+  const roll=new THREE.Mesh(new THREE.TorusGeometry(.09,.05,14,22),mat('#f2a24e',.7));roll.rotation.x=Math.PI/2;roll.castShadow=true;g.add(roll);
+  const strip=new THREE.Mesh(new THREE.BoxGeometry(.24,.02,.1),mat('#f2a24e',.7));strip.position.set(.18,-.04,0);strip.castShadow=true;g.add(strip);
+  const pad=new THREE.Mesh(new THREE.BoxGeometry(.1,.024,.06),mat('#ef8f52',.7));pad.position.set(.14,-.03,0);g.add(pad);
   return g}
- function iconTexture(kind){const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d');
-  g.fillStyle='#fff';g.beginPath();g.arc(64,64,58,0,7);g.fill();g.lineWidth=7;g.strokeStyle='#e3d7fa';g.stroke();
-  g.fillStyle='#5b3d99';
-  if(kind==='heart'){g.fillStyle='#e0556e';g.beginPath();g.moveTo(64,96);g.bezierCurveTo(18,62,36,18,64,42);g.bezierCurveTo(92,18,110,62,64,96);g.fill()}
-  else if(kind==='temp'){g.fillStyle='#e05555';g.fillRect(58,30,12,52);g.beginPath();g.arc(64,88,15,0,7);g.fill();g.strokeStyle='#e05555';g.lineWidth=5;g.strokeRect(52,24,24,64)}
-  else if(kind==='band'){g.fillStyle='#ffd9a8';g.save();g.translate(64,64);g.rotate(-.5);g.fillRect(-38,-14,76,28);g.fillStyle='#e0a06a';g.fillRect(-10,-14,20,28);g.restore()}
-  else{g.fillStyle='#c9a0e8';g.fillRect(46,52,36,24);[[40,46],[40,82],[88,46],[88,82]].forEach(p=>{g.beginPath();g.arc(p[0],p[1],13,0,7);g.fill()})}
+ // חץ ורוד מעל הכלי הפעיל - הרמז הוא על הכלי האמיתי עצמו, לא בועה צפה שנראית כמו פריט לגרירה
+ function arrowTexture(){const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d');
+  g.beginPath();g.moveTo(64,110);g.lineTo(20,60);g.lineTo(44,60);g.lineTo(44,20);g.lineTo(84,20);g.lineTo(84,60);g.lineTo(108,60);g.closePath();
+  g.fillStyle='#ff5d8f';g.strokeStyle='#ffffff';g.lineWidth=11;g.lineJoin='round';g.stroke();g.fill();
+  return new THREE.CanvasTexture(cv)}
+ // כף יד מונפשת שמדגימה ליטוף בשלב הראשון
+ function handTexture(){const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d');
+  g.fillStyle='#ff9fbd';g.strokeStyle='#d16a92';g.lineWidth=5; // שרוול מאחורי הכף
+  g.beginPath();g.roundRect(34,84,60,26,8);g.fill();g.stroke();
+  g.fillStyle='#ffffff';g.strokeStyle='#c98a4a';g.lineWidth=5;g.lineJoin='round';g.lineCap='round';
+  [45,59,73,87].forEach(x=>{g.beginPath();g.ellipse(x,36,8.5,16,0,0,7);g.fill();g.stroke()}); // אצבעות
+  g.beginPath();g.ellipse(66,64,26,26,0,0,7);g.fill();g.stroke(); // כף
+  g.beginPath();g.ellipse(35,66,9,14,-.55,0,7);g.fill();g.stroke(); // אגודל
   return new THREE.CanvasTexture(cv)}
 
  const tools={};
  const toolDefs=[
-  {id:'stetho',x:-1.2,mk:stethoMesh,icon:'heart',name:'סטטוסקופ'},
-  {id:'thermo',x:-.4,mk:thermoMesh,icon:'temp',name:'מדחום'},
-  {id:'bandage',x:.4,mk:bandageMesh,icon:'band',name:'פלסטר'},
-  {id:'bone',x:1.2,mk:boneMesh,icon:'bone',name:'עצם'}];
- const pedCols=['#63b8e8','#ff9d9d','#ffcf6e','#9fdd7a'];
- toolDefs.forEach((d,di)=>{
-  const ped=cyl(.26,.3,.09,pedCols[di],d.x,trayY+.09,2.05);
+  {id:'stetho',x:-1.05,mk:stethoMesh,col:'#63b8e8',name:'סטטוסקופ'},
+  {id:'thermo',x:-.35,mk:thermoMesh,col:'#ff9d9d',name:'מדחום'},
+  {id:'bandage',x:.35,mk:bandageMesh,col:'#ffcf6e',name:'פלסטר'},
+  {id:'bone',x:1.05,mk:boneMesh,col:'#9fdd7a',name:'עצם'}];
+ const arrowTex=arrowTexture();
+ toolDefs.forEach(d=>{
+  const ped=cyl(.26,.3,.09,'#ccd6e2',d.x,trayY+.09,2.05); // מעמד ניטרלי; נצבע בצבע הכלי רק כשהוא פעיל
   const grp=new THREE.Group();grp.position.set(d.x,trayY+.32,2.05);scene.add(grp);
   const m=d.mk();grp.add(m);
   const proxy=new THREE.Mesh(new THREE.SphereGeometry(.3,10,8),new THREE.MeshBasicMaterial({visible:false}));grp.add(proxy);
   const halo=new THREE.Mesh(new THREE.CircleGeometry(.3,24),new THREE.MeshBasicMaterial({color:'#ffd54a',transparent:true,opacity:.65,depthTest:false}));
-  halo.rotation.x=-Math.PI/2;halo.position.y=-.185;halo.visible=false;halo.raycast=()=>{};grp.add(halo);tools[d.id]&&(0);
-  const tag=new THREE.Mesh(new THREE.PlaneGeometry(.3,.3),new THREE.MeshBasicMaterial({map:iconTexture(d.icon),transparent:true}));
-  tag.position.set(0,.42,-.12);tag.raycast=()=>{};grp.add(tag);
-  grp.traverse(o=>{if(o.isMesh)o.userData.toolId=d.id});
-  tools[d.id]={grp,home:grp.position.clone(),active:false,dragging:false,icon:tag,halo:grp.children[grp.children.length-1]}});
+  halo.rotation.x=-Math.PI/2;halo.position.y=-.185;halo.visible=false;halo.raycast=()=>{};grp.add(halo);
+  const arrow=new THREE.Mesh(new THREE.PlaneGeometry(.36,.36),new THREE.MeshBasicMaterial({map:arrowTex,transparent:true,depthTest:false}));
+  arrow.position.set(0,.62,0);arrow.visible=false;arrow.renderOrder=6;arrow.raycast=()=>{};grp.add(arrow);
+  grp.traverse(o=>{if(o.isMesh){o.userData.toolId=d.id;o.userData.baseColor=o.material.color.clone()}});
+  tools[d.id]={grp,home:grp.position.clone(),ped,active:false,dragging:false,arrow,halo}});
 
  // טבעות מטרה זוהרות
  function targetRing(){const g=new THREE.Group();
@@ -195,6 +204,10 @@ function startVet3D(root){
   if(faceCam)ring.lookAt(camera.position);else ring.rotation.x=-Math.PI/2}
  function hideRings(){Object.values(rings).forEach(r=>r.visible=false)}
  function worldPos(obj){const v=new THREE.Vector3();obj.getWorldPosition(v);return v}
+
+ // יד הליטוף המונפשת
+ const handHint=new THREE.Sprite(new THREE.SpriteMaterial({map:handTexture(),transparent:true,depthTest:false}));
+ handHint.scale.set(.75,.75,1);handHint.renderOrder=7;handHint.visible=false;handHint.raycast=()=>{};scene.add(handHint);
 
  // ניצוצות תלת-ממדיים
  const sparks=[];
@@ -225,9 +238,19 @@ function startVet3D(root){
  for(let i=0;i<5;i++)paws.appendChild(el('span','paw',PAW_SVG));
  hud.appendChild(paws);hud.appendChild(instrBox);root.appendChild(hud);
  let curInstr='';
- function setInstr(t,sayIt){curInstr=t;instrTxt.textContent=t;if(sayIt!==false)speak(t)}
- rep.onclick=()=>{if(curInstr)speak(curInstr)};
+ rep.onclick=()=>{if(curInstr)vetSpeak(curInstr)};
  function setPaws(n){[...paws.children].forEach((p,i)=>p.classList.toggle('on',i<n))}
+
+ // --- דיבור: שורת הוראות ממתינה לסוף המשפט הנוכחי בלי לחתוך אותו,
+ //     כדי שהמעברים יהיו מהירים (השלב מתקדם מיד) בלי לאבד הקראה חיונית ---
+ let spkEpoch=0,spkBusy=false,spkPending=null,dead=false;
+ function vetSpeak(txt,onEnd){spkEpoch++;const ep=spkEpoch;
+  if(!txt){spkBusy=false;if(onEnd)onEnd();return}
+  spkBusy=true;
+  speak(txt,()=>{if(ep!==spkEpoch)return;spkBusy=false;if(onEnd)onEnd();
+   if(spkPending!=null){const p=spkPending;spkPending=null;vetSpeak(p)}})}
+ function sayStageInstr(display,spoken){curInstr=display;instrTxt.textContent=display;const s=spoken||display;
+  if(spkBusy)spkPending=s;else{spkPending=null;vetSpeak(s)}}
 
  // --- מצב המשחק ---
  const STAGES=['pet','stetho','thermo','bandage','bone','done'];
@@ -238,29 +261,31 @@ function startVet3D(root){
   thermo:'עכשיו גררי את המדחום אל המצח של רקס',
   bandage:'גררי את הפלסטר אל השריטה',
   bone:'רקס רעב אחרי הטיפול! גררי את העצם אל הקערה'};
+ // מוקד מבט לכל שלב - מסגר את הדמות והמטרה יחד בלי שהמטרה נחתכת או מוסתרת
+ const stageLook={pet:[0,1.6,.15],stetho:[0,1.55,.3],thermo:[0,1.85,.1],bandage:[-.35,1.6,.15],bone:[1.3,1.0,1.0],done:[0,1.78,.2]};
  function activeToolId(){const s=STAGES[stage];return(s==='stetho'||s==='thermo'||s==='bandage'||s==='bone')?s:null}
+ const GRAY=new THREE.Color('#9aa2ad');
  function updateTools(){toolDefs.forEach(d=>{const t=tools[d.id],on=d.id===activeToolId();
   t.active=on;
-  t.grp.traverse(o=>{if(o.isMesh&&o!==t.halo){o.material.transparent=true;o.material.opacity=on?1:.72}});
-  t.halo.visible=on;t.halo.material.opacity=.65})}
+  t.grp.traverse(o=>{if(o.isMesh&&o!==t.halo&&o!==t.arrow){o.material.transparent=false;o.material.opacity=1;
+   o.material.color.copy(o.userData.baseColor);if(!on)o.material.color.lerp(GRAY,.3)}});
+  t.ped.material.color.set(on?d.col:'#ccd6e2');
+  t.halo.visible=on})}
  function updateRing(){hideRings();const s=STAGES[stage];
   if(s==='stetho')ringAt(rings.heart,worldPos(body).add(new THREE.Vector3(-.1,.15,.45)),true);
-  else if(s==='thermo')ringAt(rings.head,worldPos(headG).add(new THREE.Vector3(0,.32,.2)),true);
+  else if(s==='thermo')ringAt(rings.head,worldPos(headG).add(new THREE.Vector3(0,.18,.3)),true);
   else if(s==='bandage')ringAt(rings.scratch,worldPos(scratch).add(new THREE.Vector3(-.06,0,.12)),true);
   else if(s==='bone'){ringAt(rings.bowl,worldPos(bowlG).add(new THREE.Vector3(0,.42,0)),false);rings.bowl.userData.base=1.4}
   else rings.bowl.userData.base=1}
- function gotoStage(i){stage=i;setPaws(Math.min(i,5));updateTools();updateRing();
-  const s=STAGES[stage];if(stageInstr[s])setInstr(stageInstr[s])}
+ function updateLook(){const L=stageLook[STAGES[stage]]||stageLook.pet;lookTarget.set(L[0],L[1],L[2])}
+ function gotoStage(i){stage=i;setPaws(Math.min(i,5));updateTools();updateRing();updateLook();
+  const s=STAGES[stage];if(stageInstr[s])sayStageInstr(stageInstr[s])}
 
  // גרירה
  const ray=new THREE.Raycaster(),ptr=new THREE.Vector2(),dragPlane=new THREE.Plane(),dragOff=new THREE.Vector3();
  let dragTool=null,draggingOnPet=false,lastPet=null,petDist=0;
- const tmpV=new THREE.Vector3();
  function setPtr(e){const r=renderer.domElement.getBoundingClientRect();
   ptr.x=((e.clientX-r.left)/r.width)*2-1;ptr.y=-((e.clientY-r.top)/r.height)*2+1}
- function screenDist(a,b){const pa=a.clone().project(camera),pb=b.clone().project(camera);
-  const r=renderer.domElement.getBoundingClientRect();
-  const dx=(pa.x-pb.x)*r.width/2,dy=(pa.y-pb.y)*r.height/2;return Math.hypot(dx,dy)}
  function pickTool(e){setPtr(e);ray.setFromCamera(ptr,camera);
   for(const d of toolDefs){const hit=ray.intersectObject(tools[d.id].grp,true);
    if(hit.length)return tools[d.id]}
@@ -272,7 +297,7 @@ function startVet3D(root){
   if(finished)return;
   const t=pickTool(e);
   if(t){
-   if(!t.active){sfx('tick');speak(curInstr);tw(0,k=>{t.grp.rotation.z=Math.sin(k*Math.PI*3)*.12*(1-k)},.5);return}
+   if(!t.active){sfx('tick');vetSpeak(curInstr);tw(0,k=>{t.grp.rotation.z=Math.sin(k*Math.PI*3)*.12*(1-k)},.5);return}
    dragTool=t;t.dragging=true;draggingOnPet=false;
    setPtr(e);ray.setFromCamera(ptr,camera);
    dragPlane.setFromNormalAndCoplanarPoint(new THREE.Vector3(0,0,1).applyQuaternion(camera.quaternion),t.grp.position);
@@ -282,6 +307,7 @@ function startVet3D(root){
    return}
   // מצב ליטוף: כל מגע שלא על כלי - המרחק נצבר רק כשהאצבע עוברת על רקס
   draggingOnPet=true;lastPet={x:e.clientX,y:e.clientY};
+  if(pickRex(e))tw(0,k=>{const s=1+Math.sin(k*Math.PI)*.05;headG.scale.set(s,s,s)},.3); // משוב מגע עדין
   try{cvs.setPointerCapture(e.pointerId)}catch(_){}});
  cvs.addEventListener('pointermove',e=>{
   if(dragTool){setPtr(e);ray.setFromCamera(ptr,camera);
@@ -298,21 +324,22 @@ function startVet3D(root){
    if(petDist>55){petDist=0;floaty('💛');sfx('tick');
     tailWagBoost=1;
     if(STAGES[stage]==='pet'){pets++;
-     if(pets===1)speak('אחת');
-     else if(pets===2)speak('שתיים');
+     if(pets===1)vetSpeak('אחת');
+     else if(pets===2)vetSpeak('שתיים');
      else if(pets>=3){draggingOnPet=false;
-      speak('שלוש! רקס רגוע ומוכן לבדיקה',()=>gotoStage(1))}}}}});
+      vetSpeak('שלוש! רקס רגוע ומוכן לבדיקה');
+      setTimeout(()=>gotoStage(1),700)}}}}});
  function pxDist(e,wp){const r=renderer.domElement.getBoundingClientRect();const p=wp.clone().project(camera);
   const px=r.left+(p.x+1)/2*r.width,py=r.top+(1-p.y)/2*r.height;return Math.hypot(e.clientX-px,e.clientY-py)}
  function endDrag(e){
   if(dragTool){const t=dragTool;dragTool=null;t.dragging=false;twScale(t.grp,1,.2);
    const s=STAGES[stage];let ok=false,targetPos=null;
    if(s==='stetho'&&t===tools.stetho){targetPos=worldPos(body).add(new THREE.Vector3(-.1,.12,.42));ok=pxDist(e,targetPos)<150}
-   else if(s==='thermo'&&t===tools.thermo){targetPos=worldPos(headG).add(new THREE.Vector3(.05,.3,.28));ok=pxDist(e,targetPos)<150}
+   else if(s==='thermo'&&t===tools.thermo){targetPos=worldPos(headG).add(new THREE.Vector3(0,.15,.28));ok=pxDist(e,targetPos)<160}
    else if(s==='bandage'&&t===tools.bandage){targetPos=worldPos(scratch);ok=pxDist(e,targetPos)<160}
    else if(s==='bone'&&t===tools.bone){targetPos=worldPos(bowlG).add(new THREE.Vector3(0,.3,0));ok=pxDist(e,targetPos)<160}
    if(ok)dropSuccess(t,s,targetPos);
-   else{sayHint('זה לא המקום. גררי למעגל הזוהר');
+   else{vetSpeak('זה לא המקום. גררי למעגל הזוהר');toast('זה לא המקום. גררי למעגל הזוהר');
     twPos(t.grp,t.home,.5,k=>1-Math.pow(1-k,4))}
   }
   draggingOnPet=false;lastPet=null}
@@ -324,35 +351,40 @@ function startVet3D(root){
   if(s==='stetho'){
    twPos(t.grp,targetPos,.35,null,()=>{
     heartbeat();const hb=setInterval(heartbeat,650);
-    speak('שומעים את הלב! הוא פועם חזק',()=>{clearInterval(hb);
-     twPos(t.grp,t.home,.5,null,()=>gotoStage(2))});
-    let n=0;const beat=setInterval(()=>{twScale(headG,1.03,.12,()=>twScale(headG,1,.15));if(++n>5)clearInterval(beat)},650)})}
+    let n=0;const beat=setInterval(()=>{twScale(headG,1.03,.12,()=>twScale(headG,1,.15));if(++n>3)clearInterval(beat)},650);
+    vetSpeak('שומעים את הלב! הוא פועם חזק');
+    setTimeout(()=>{clearInterval(hb);twPos(t.grp,t.home,.5,null,()=>gotoStage(2))},1600)})}
   else if(s==='thermo'){
    twPos(t.grp,targetPos,.35,null,()=>{
-    setInstr('בודקים את החום...');
-    setTimeout(()=>{sfx('good');speak('החום בסדר גמור!',()=>{twPos(t.grp,t.home,.5,null,()=>gotoStage(3))})},1400)})}
+    curInstr='בודקים את החום...';instrTxt.textContent=curInstr;
+    setTimeout(()=>{sfx('good');vetSpeak('החום בסדר גמור!');
+     twPos(t.grp,t.home,.5);setTimeout(()=>gotoStage(3),900)},1300)})}
   else if(s==='bandage'){
    twPos(t.grp,targetPos,.3,null,()=>{
     t.grp.visible=false;plaster.visible=true;scratch.visible=false;
     sparkleBurst(worldPos(plaster),10);
-    speak('הפלסטר על השריטה! כבר יהיה טוב',()=>gotoStage(4))})}
+    vetSpeak('הפלסטר על השריטה! כבר יהיה טוב');
+    setTimeout(()=>gotoStage(4),800)})}
   else if(s==='bone'){
    twPos(t.grp,targetPos,.4,null,()=>{
-    t.grp.visible=false;ball(.16,'#fff8ec',0,.22,0,bowlG,1,.6,1);
+    t.grp.visible=false;ball(.16,'#f9db96',0,.22,0,bowlG,1,.6,1);
     chomp();setTimeout(chomp,500);tailWagBoost=2;
     tw(0,k=>{headG.rotation.x=.35*Math.abs(Math.sin(k*Math.PI*3))},1.4,null,()=>{headG.rotation.x=0});
-    speak('טעים! רקס אוהב את העצם',()=>finish())})}}
+    vetSpeak('טעים! רקס אוהב את העצם');
+    setTimeout(()=>finish(),900)})}}
 
- function finish(){finished=true;stage=5;hideRings();setPaws(5);
+ function finish(){finished=true;stage=5;hideRings();setPaws(5);updateTools();updateLook();
   twPos(rex,new THREE.Vector3(0,1.35,-.15),.28,k=>1-Math.pow(1-k,3),()=>twPos(rex,new THREE.Vector3(0,1.13,-.15),.35));
   yip();setTimeout(yip,350);tailWagBoost=3;
   sparkleBurst(worldPos(headG),18);confettiBurst(16);
-  speak('רקס מרגיש הרבה יותר טוב! כל הכבוד רונה!');
-  try{const s=JSON.parse(localStorage.getItem('ronaRoleplay.v1'))||{};s.vet3d={visits:((s.vet3d||{}).visits||0)+1};localStorage.setItem('ronaRoleplay.v1',JSON.stringify(s))}catch(e){}
-  setInstr('רקס מרגיש הרבה יותר טוב!',false);
+  // שמירת ההתקדמות דרך STATE/saveState המשותפים - כך שמירה רגילה של האפליקציה (השתקה, פעילות קלאסית) לא דורסת את הביקורים
+  try{const raw=JSON.parse(localStorage.getItem(LS_KEY))||{};
+   const cur=Math.max((raw.vet3d&&raw.vet3d.visits)||0,(STATE.vet3d&&STATE.vet3d.visits)||0);
+   STATE.vet3d=Object.assign({},raw.vet3d,STATE.vet3d,{visits:cur+1});saveState()}catch(e){}
+  sayStageInstr('רקס מרגיש הרבה יותר טוב!','רקס מרגיש הרבה יותר טוב! כל הכבוד רונה!');
   const again=el('button','big-btn vet3d-again','<svg viewBox="0 0 100 100" width="1em" height="1em" style="display:inline-block;vertical-align:-2px"><g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round"><path d="M78 50 a28 28 0 1 1 -10 -21"/><path d="M71 11 v20 h-20"/></g></svg> שחקי שוב');
   again.onclick=()=>{cleanup();root.innerHTML='';startVet3DInto(root)};
-  hud.appendChild(again)}
+  instrBox.appendChild(again)}
 
  // פרטים זעירים של חיים: אבק מרחף
  const dustG=new THREE.BufferGeometry();const dustN=40;const dustPos=new Float32Array(dustN*3);
@@ -362,9 +394,10 @@ function startVet3D(root){
  dust.raycast=()=>{};scene.add(dust);
 
  // לולאת אנימציה
- let raf=0,tailWagBoost=0,blinkT=2,earT=4,dead=false;
+ let raf=0,tailWagBoost=0,blinkT=2,earT=4;
  const clock=new THREE.Clock();let parX=0,parY=0;
- addEventListener('pointermove',e=>{parX=(e.clientX/innerWidth-.5);parY=(e.clientY/innerHeight-.5)});
+ function onPar(e){parX=(e.clientX/innerWidth-.5);parY=(e.clientY/innerHeight-.5)}
+ addEventListener('pointermove',onPar);
  function anim(){
   if(dead)return;raf=requestAnimationFrame(anim);
   const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
@@ -380,10 +413,18 @@ function startVet3D(root){
   // אוזניים
   earT-=dt;if(earT<0){earT=3+Math.random()*4;
    const e=Math.random()<.5?earL:earR;tw(0,k=>{e.rotation.z=(e===earL?1.05:-1.05)+Math.sin(k*Math.PI)*.2},.4)}
-  // כלי פעיל קופץ בקלות
+  // כלי פעיל קופץ בקלות + חץ מונפש מעליו
   toolDefs.forEach(d=>{const tl=tools[d.id];
    if(tl.active&&!tl.dragging&&tl.grp.visible){tl.grp.position.y=tl.home.y+Math.sin(t*3.2)*.045;
-    const p=1+Math.sin(t*3.2)*.03;tl.grp.scale.set(p,p,p)}});
+    const p=1+Math.sin(t*3.2)*.03;tl.grp.scale.set(p,p,p)}
+   tl.arrow.visible=tl.active&&!tl.dragging&&tl.grp.visible;
+   if(tl.arrow.visible){tl.arrow.position.y=.62+Math.sin(t*3.2)*.06;tl.arrow.lookAt(camera.position)}});
+  // יד הליטוף: מחליקה מצד לצד על גופו של רקס כל עוד אנחנו בשלב הליטוף
+  handHint.visible=!finished&&STAGES[stage]==='pet';
+  if(handHint.visible){const hx=Math.sin(t*2.4)*.5;
+   handHint.position.set(hx,1.78+Math.sin(t*4.8)*.03,.55);
+   handHint.material.rotation=Math.sin(t*2.4)*.28;
+   handHint.material.opacity=.75+Math.abs(Math.sin(t*2.4))*.25}
   // טבעות פועמות
   Object.values(rings).forEach(r=>{if(r.visible){const p=(r.userData.base||1)*(1+Math.sin(t*4)*.13);r.scale.set(p,p,p)}});
   toolDefs.forEach(d=>{const h=tools[d.id].halo;if(h.visible){const p=1+Math.sin(t*3.2)*.18;h.scale.set(p,p,p);h.material.opacity=.45+Math.sin(t*3.2)*.25}});
@@ -398,17 +439,19 @@ function startVet3D(root){
   // טווינים
   for(let i=tweens.length-1;i>=0;i--){const w=tweens[i];w.t+=dt;const k=Math.min(1,w.t/w.dur);
    w.set(w.ease(k));if(k>=1){tweens.splice(i,1);if(w.done)w.done()}}
-  // מצלמה: נדנוד עדין + פרלקסה
-  camera.position.x=camBase.x+Math.sin(t*.4)*.06+parX*.55;
-  camera.position.y=camBase.y+Math.sin(t*.53)*.04-parY*.3;
-  camera.lookAt(camLook);
+  // מצלמה: מוקד משתנה לפי שלב + נדנוד עדין + פרלקסה
+  lookCur.lerp(lookTarget,Math.min(1,dt*3.5));
+  camera.position.x=camBase.x+Math.sin(t*.4)*.06+parX*parF;
+  camera.position.y=camBase.y+Math.sin(t*.53)*.04-parY*parF*.55;
+  camera.lookAt(lookCur);
   renderer.render(scene,camera)}
  anim();
 
  function onResize(){if(!root.isConnected)return;renderer.setSize(W(),H());fitCam()}
  addEventListener('resize',onResize);
 
- function cleanup(){dead=true;cancelAnimationFrame(raf);removeEventListener('resize',onResize);
+ function cleanup(){dead=true;spkEpoch++;cancelAnimationFrame(raf);removeEventListener('resize',onResize);
+  removeEventListener('pointermove',onPar);
   hideRings();try{renderer.dispose()}catch(e){}
   try{renderer.forceContextLoss&&renderer.forceContextLoss()}catch(e){}
   if(renderer.domElement.parentNode)renderer.domElement.parentNode.removeChild(renderer.domElement)}
