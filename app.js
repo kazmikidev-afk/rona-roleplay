@@ -101,9 +101,9 @@ function levelScreen(role,lvl,sc){
 const INSTR={toolpick:'בחרי מברשת ומשחה כדי לנקות את השיניים',brush:'צחצחי במעגלים קטנים עד שהשיניים מנצנצות',patch:'שימי טלאי קסם צבעוני על הנקודה החולה',wobbly:'געי בעדינות בשן המתנדנדת',snacksort:'מייני: מה טוב לשיניים ומה רק קצת?',story:'בחרי איך הסיפור ממשיך',share:'חלקי לכולם שווה בשווה',dayorder:'סדרי את לוח היום של הגן',simon:'חזרי על התנועות של שיר המעבר',gallery:'תלי כל ציור במסגרת המתאימה',find:'מצאי על המדפים את מה שברשימה',count:'ספרי בקול והכניסי לתיק',change:'החזירי ללקוח את העודף הנכון',shelfsort:'סדרי את הסחורה על המדפים הנכונים',dressup:'בחרי תלבושת ותאורה לבמה',picksong:'בחרי איזה שיר נשיר בהופעה',rhythm:'מקישים כשהאור עובר באזור הזהב!',stetho:'שימי את הסטטוסקופ על הלב',bandage:'שימי פלסטר צבעוני על השריטה',temp:'החזיקי את המדחום על המצח',feed:'מה האוכל הנכון בשביל החיה?',furscrub:'הברישי את הפרווה עד שהיא נקייה ומבריקה',recipe:'בחרי מה מכינים היום במטבח',gather:'אספי את המרכיבים מהמדף',steps:'עשי את שלבי ההכנה בסדר הנכון',chop:'קצצי את הירקות לתוך הקערה',serve:'קשטי את הצלחת והגישי בחיוך',foodsort:'מייני: אוכל של כל יום או של פעמים מיוחדות'};
 
 const DISH_STEPS={salad:[{e:'🚿',n:'שוטפים'},{e:'🔪',n:'קוצצים'},{e:'🥣',n:'מערבבים'},{e:'🍽️',n:'מגישים'}],
-sandwich:[{e:'🍞',n:'לוקחים לחם'},{e:'🧀',n:'שמים מילוי'},{e:'🥪',n:'סוגרים את הכריך'},{e:'😋',n:'מגישים'}],
-shake:[{e:'🍌',n:'שמים פירות'},{e:'🥛',n:'מוסיפים חלב'},{e:'🌀',n:'טוחנים'},{e:'🥤',n:'מוזגים'}],
-pizza:[{e:'🖐️',n:'מרדדים בצק'},{e:'🍅',n:'מורחים רוטב'},{e:'🧀',n:'מפזרים גבינה'},{e:'🔥',n:'אופים'}]};
+sandwich:[{e:'🍞',n:'לוקחים לחם'},{e:'🥑',n:'שמים מילוי'},{e:'🥪',n:'סוגרים את הכריך'},{e:'😋',n:'מגישים'}],
+shake:[{e:'🍌',n:'שמים פירות'},{e:'💧',n:'מוסיפים מים'},{e:'🌀',n:'טוחנים'},{e:'🥤',n:'מוזגים'}],
+pizza:[{e:'🖐️',n:'מרדדים בצק'},{e:'🍅',n:'מורחים רוטב'},{e:'🧅',n:'מפזרים ירקות'},{e:'🔥',n:'אופים'}]};
 
 function paramsFor(type,lvl,ctx){
  const ch=ctx.char;
@@ -116,8 +116,8 @@ function paramsFor(type,lvl,ctx){
   case 'bandage':return{tool:`<span class="light-dot" style="background:${STATE.choices.bandageColor||'#ff8fb3'};width:46px;height:46px;border-radius:12px"></span>`,target:ch.c[0]+'❗',doneEmoji:ch.c[0]+'🩹',decoys:['🧴','🪮'],spots:1,pickSay:'עכשיו על השריטה!'};
   case 'stetho':return{tool:'🩺',target:ch.c[0]+'❤️',doneEmoji:ch.c[0]+'💓',decoys:['🩹','🌡️'],spots:1,pickSay:'עכשיו על הלב!'};
   case 'snacksort':{const n=[0,4,6,8][lvl];const goods=sample(SNACKS_GOOD,n/2).map(e=>({e,bin:'good'})),bads=sample(SNACKS_BAD,n/2).map(e=>({e,bin:'bad'}));
-   return{bins:[{id:'good',e:'😁',n:'טוב לשיניים'},{id:'bad',e:'😬',n:'רק קצת'}],items:goods.concat(bads),hint:'פירות, ירקות וחלב טובים לשיניים'}}
-  case 'foodsort':{const n=[0,4,6,8][lvl];const goods=sample(['🍎','🥪','🥛','🥚','🥕','🍌'],n/2).map(e=>({e,bin:'every'})),bads=sample(['🍕','🍰','🥤','🍟','🍩','🍬'],n/2).map(e=>({e,bin:'some'}));
+   return{bins:[{id:'good',e:'😁',n:'טוב לשיניים'},{id:'bad',e:'😬',n:'רק קצת'}],items:goods.concat(bads),hint:'פירות וירקות טובים לשיניים'}}
+  case 'foodsort':{const n=[0,4,6,8][lvl];const goods=sample(['🍎','🥪','🍐','🥚','🥕','🍌'],n/2).map(e=>({e,bin:'every'})),bads=sample(['🍕','🍰','🥤','🍟','🍩','🍬'],n/2).map(e=>({e,bin:'some'}));
    return{bins:[{id:'every',e:'💪',n:'כל יום'},{id:'some',e:'🎉',n:'לפעמים'}],items:goods.concat(bads),hint:'אוכל בריא אוכלים כל יום'}}
   case 'story':return{points:lvl};
   case 'share':return{total:[0,4,6,8][lvl],kids:1+lvl,item:'🖍️',kidEmojis:['👧','👦','🧒','👧🏽']};
@@ -131,7 +131,7 @@ function paramsFor(type,lvl,ctx){
    const n=[0,3,5,7][lvl];const list=dish.ing.slice(0,n);
    const others=SHOP_ITEMS.filter(x=>!list.includes(x));
    return{list,pool:list.concat(sample(others,Math.min(others.length,n+3)))}}
-  case 'count':return{n:[0,3,5,7][lvl],item:sample(['🍎','🍞','🥛','🧀'],1)[0],bag:'🛍️'};
+  case 'count':return{n:[0,3,5,7][lvl],item:sample(['🍎','🍞','🫐','🥕'],1)[0],bag:'🛍️'};
   case 'change':return{price:[0,8,7,5+Math.floor(Math.random()*2)][lvl]};
   case 'shelfsort':{const nb=Math.min(1+lvl,3);const cats=SHOP_CATS.slice(0,nb);
    const items=[];cats.forEach(c=>sample(c.items,[0,2,2,3][lvl]).forEach(e=>items.push({e,bin:c.id})));
@@ -232,7 +232,7 @@ function parentsScreen(sc){
  <div>המשחק הוא משחק דמיון וחינוך להרגלים, לא הדרכה רפואית. סתימות ועקירות מוצגות כדמיון עדין בלבד (טלאי קסם, שן חלבית שנושרת לבד).</div>
  <ul>
  <li>צחצוח פעמיים ביום, בבוקר ובערב לפני השינה, עם משחת שיניים המכילה פלואוריד (משרד הבריאות).</li>
- <li>בגילאי 2-6: כמות משחה בגודל גרגר אפונה, משחה עם 1000ppm פלואוריד (מידעת).</li>
+ <li>בגילאי 2-6: כמות משחה בגודל גרגר אפונה, משחה עם 1000ppm פלואוריד (מדעת).</li>
  <li>ילדים צעירים לא מצחצחים יעיל לבד - מבוגר מסייע ומשגיח (AAPD).</li>
  <li>משך צחצוח מומלץ: כשתי דקות (AAPD, KidsHealth).</li>
  <li>ילדי גן זכאים לבדיקת שיניים שנתית והדרכת צחצוח במסגרת שירותי הבריאות בגן (משרד הבריאות).</li>
@@ -241,10 +241,12 @@ function parentsScreen(sc){
  <ul>
  <li><a href="https://me.health.gov.il/parenting/raising-children/early-childhood-care/dental-and-oral-health/dental-health/" target="_blank" rel="noopener">משרד הבריאות - בריאות השן בגיל הרך</a></li>
  <li><a href="https://me.health.gov.il/parenting/learn-more/growth-and-development/school-health-services/" target="_blank" rel="noopener">משרד הבריאות - שירותי בריאות בגן</a></li>
- <li><a href="https://www.midaat.org.il/articles/health-and-sickness/fluoride-therapy-infants/" target="_blank" rel="noopener">מידעת - פלואוריד לילדים</a></li>
+ <li><a href="https://www.midaat.org.il/articles/health-and-sickness/fluoride-therapy-infants/" target="_blank" rel="noopener">מדעת - פלואוריד לילדים</a></li>
  <li><a href="https://www.aapd.org/resources/parent/faq/" target="_blank" rel="noopener">AAPD - שאלות נפוצות להורים</a></li>
  <li><a href="https://kidshealth.org/en/parents/healthy.html" target="_blank" rel="noopener">KidsHealth - שמירה על שיניים בריאות</a></li>
  </ul>
+ <h3>האוכל במשחק</h3>
+ <div>הבישול, הקניות והחטיפים במשחק הם משחק דמיון בלבד - לא המלצה תזונתית ולא הנחיית בטיחות. במשפחה עם אלרגיות או הגבלות אוכל, ההנחיות הרפואיות שלכם תמיד קודמות למה שרואים במשחק.</div>
  <h3>גיבוי ההתקדמות</h3>
  <div>כדי לשמור את התגים והבחירות של רונה (או להעביר למכשיר אחר): לוחצים "ייצוא" ושומרים את הקובץ. לשחזור: "ייבוא" ובוחרים את הקובץ. מומלץ לייצא מדי פעם.</div>`;
  sc.appendChild(p);

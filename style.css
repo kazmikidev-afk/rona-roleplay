@@ -55,6 +55,7 @@ p.screen-sub{text-align:center;color:#7a68a0;font-size:clamp(13px,2vh,17px);marg
 .sparkle-goal{font-size:clamp(60px,14vh,110px);transition:filter .3s,transform .3s}
 .mouth{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:340px}
 .tooth{font-size:clamp(30px,6vh,46px);transition:filter .2s,transform .2s}
+.sparkle-goal.tooth{background:radial-gradient(circle at 50% 45%,#d7e5ff,#eef4ff);border-radius:50%;padding:20px;box-shadow:0 4px 12px rgba(60,30,110,.16)}
 .tooth.clean{filter:drop-shadow(0 0 6px #fff) brightness(1.15)}
 .tooth.wobbly{animation:wob 1s infinite}
 @keyframes wob{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
