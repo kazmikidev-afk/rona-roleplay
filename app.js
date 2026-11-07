@@ -78,7 +78,8 @@ function toast(t){const tt=document.getElementById('toast');tt.textContent=t;tt.
 const screenEl=document.getElementById('screen'),backBtn=document.getElementById('btn-back'),titleEl=document.getElementById('top-title');
 let navStack=[];
 function setTitle(t){titleEl.textContent=t}
-function show(fn,title,push=true){if(push&&show._cur)navStack.push(show._cur);show._cur={fn,title};
+function show(fn,title,push=true){if(typeof window.__scene3dCleanup==='function'){try{window.__scene3dCleanup()}catch(e){}window.__scene3dCleanup=null}
+ if(push&&show._cur)navStack.push(show._cur);show._cur={fn,title};
  screenEl.innerHTML='';setTitle(title);backBtn.classList.toggle('hidden',navStack.length===0);fn(screenEl);screenEl.scrollTop=0}
 function goBack(){const p=navStack.pop();if(p){show._cur=null;show(p.fn,p.title,false)}}
 backBtn.onclick=()=>{speak('');goBack()};
@@ -93,6 +94,7 @@ function homeScreen(sc){
  ROLES.forEach(r=>{const b=el('button','role-card');b.style.background=r.grad;
   const earned=(STATE.badges[r.id]||[]).filter(Boolean).length;
   b.innerHTML=`<div class="re">${r.emoji}</div><div class="rn">${r.name}</div><div class="rs">${'⭐'.repeat(earned)}${'☆'.repeat(r.levels.length-earned)}</div>`;
+  if(r.id==='vet'){b.style.position='relative';b.appendChild(el('div','vet3d-ribbon','✨ תלת-ממד'))}
   b.onclick=()=>{sfx('tick');show(roleScreen.bind(null,r),r.name)};grid.appendChild(b)});
  sc.appendChild(grid);
  const foot=el('div','home-foot');
@@ -114,6 +116,8 @@ function roleScreen(role,sc){
   b.onclick=()=>{if(locked){sfx('oops');speak('קודם משלימים את הרמה הקודמת');toast('משלימים קודם את רמה '+(l-1));return}
    if(isFresh){delete STATE.fresh[role.id];saveState()}
    sfx('tick');show(levelScreen.bind(null,role,l),role.name+' · רמה '+l)};lvlRow.appendChild(b)}
+ if(role.id==='vet'){const c3=el('button','vet3d-card','<span class="v3emoji">🐶</span><span class="v3txt">✨ חדש! ביקור תלת-ממדי במרפאה</span>');
+  c3.onclick=()=>{sfx('tick');openVet3D()};sc.appendChild(c3)}
  sc.appendChild(lvlRow);
  const done=(STATE.done[role.id]||{})[unl]||{};
  const doneCount=Object.keys(done).length;
@@ -258,6 +262,11 @@ function runVisit(role,lvl,ci){
  show(intro,visitTitle);
 }
 function engineType(t){return({toolpick:'pick',feed:'pick',brush:'scrub',furscrub:'scrub',patch:'dragOne',bandage:'dragOne',stetho:'dragOne',snacksort:'sort',shelfsort:'sort',foodsort:'sort',gallery:'sort',count:'countTap',dayorder:'order',steps:'order',simon:'simon',story:'story',dressup:'choiceSave',picksong:'choiceSave',recipe:'choiceSave',serve:'serve',rhythm:'rhythm',change:'change',share:'share',temp:'temp',wobbly:'wobbly',chop:'chop',find:'find',gather:'find',teethcount:'countTap',diagnose:'order',duet:'rhythm',bigchange:'change',freestyle:'choiceSave'})[t]||t}
+
+// --- ביקור תלת-ממדי אצל הוטרינרית ---
+function openVet3D(){
+ show(sc=>{const wrap=el('div','vet3d-wrap');sc.appendChild(wrap);startVet3DInto(wrap)},'מרפאת החיות ✨');
+}
 
 // --- תגים ---
 function badgesScreen(sc){
