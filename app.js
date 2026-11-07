@@ -140,11 +140,11 @@ function roleScreen(role,sc){
   const c4=el('button','vet3d-card','<span class="v3emoji">🍳</span><span class="v3txt">✨ מטבח תלת-ממדי · רמה '+Math.min((window.prog3d?prog3d.get('chef').lvl:unl),role.levels.length)+'</span>');
   if(v>0)c4.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v,5))+(v>5?' ×'+v:'')));
   c4.onclick=()=>{sfx('tick');openChef3D()};sc.appendChild(c4)}
- if(role.id==='shop'&&new URLSearchParams(location.search).has('exp3d')){const v=(STATE.shop3d&&STATE.shop3d.visits)||0;
+ if(role.id==='shop'){const v=(STATE.shop3d&&STATE.shop3d.visits)||0;
   const c5=el('button','vet3d-card','<span class="v3emoji">🛒</span><span class="v3txt">✨ חנות תלת-ממדית · רמה '+Math.min((window.prog3d?prog3d.get('shop').lvl:unl),role.levels.length)+'</span>');
   if(v>0)c5.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v,5))+(v>5?' ×'+v:'')));
   c5.onclick=()=>{sfx('tick');openShop3D()};sc.appendChild(c5)}
- if(role.id==='dentist'&&new URLSearchParams(location.search).has('exp3d')){const v=(STATE.dentist3d&&STATE.dentist3d.visits)||0;
+ if(role.id==='dentist'){const v=(STATE.dentist3d&&STATE.dentist3d.visits)||0;
   const c6=el('button','vet3d-card','<span class="v3emoji">🦷</span><span class="v3txt">✨ מרפאת שיניים בתלת-ממד · רמה '+Math.min((window.prog3d?prog3d.get('dentist').lvl:unl),role.levels.length)+'</span>');
   if(v>0)c6.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v,5))+(v>5?' ×'+v:'')));
   c6.onclick=()=>{sfx('tick');openDentist3D()};sc.appendChild(c6)}
