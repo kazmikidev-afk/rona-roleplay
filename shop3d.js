@@ -42,7 +42,7 @@ function startShop3D(root) {
   // הלקוחה — דמות מסתובבת בין ביקורים (צבע משתנה)
   const CUST_COLORS = ['#b57edc', '#f4a460', '#90caf9', '#a5d6a7', '#f48fb1', '#ffe082'];
   const custColor = CUST_COLORS[prog.visits % CUST_COLORS.length];
-  const cust = w.group(2.95, 0, -.2);
+  const cust = w.group(2.5, 0, -.2); // גוף הלקוחה נחתך בנייד גם כשהטבעת בפריים
   w.ball(.55, custColor, 0, .95, 0, cust, 1, 1.15, 1);
   w.ball(.42, custColor, 0, 1.85, 0, cust);
   w.ball(.13, custColor, -.3, 2.2, 0, cust); w.ball(.13, custColor, .3, 2.2, 0, cust);
@@ -256,7 +256,7 @@ function startShop3D(root) {
     // ערימת מטבעות על הדלפק הקדמי
     const nCoins = price + (eff >= 2 ? 1 : 0); // ברמה גבוהה מטבע נוסף לבחירה
     for (let i = 0; i < nCoins; i++) {
-      const coin = w.group(-.8 + i * .42, .92, 2.4); stageObjs.push(coin); // ריכוך — הרחק מקצה המסך (כלל 14)
+      const coin = w.group(-.55 + i * .42, .92, 2.4); stageObjs.push(coin); // ריכוך — הרחק מקצה המסך (כלל 14), לא מאחורי המקרר
       w.cyl(.14, .14, .04, '#ffd54f', 0, 0, 0, coin);
       w.cyl(.1, .1, .05, '#ffca28', 0, 0, 0, coin);
       const dr = w.makeDraggable(coin, { proxyR: .24, onPick: () => sfx('tick') });
