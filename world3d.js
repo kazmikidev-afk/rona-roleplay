@@ -257,8 +257,8 @@ function startWorld3D(root, opts) {
   }
   onTick(() => {
     if (!flyT.p) return;
-    camera.position.lerp(flyT.p, .08);
-    camLook.lerp(flyT.l, .08);
+    camera.position.lerp(flyT.p, .35);
+    camLook.lerp(flyT.l, .35);
     camera.lookAt(camLook);
   });
 

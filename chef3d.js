@@ -100,7 +100,9 @@ function startChef3D(root) {
   // ---------- ניהול שלבים ----------
   const STAGES = ['recipe', 'gather', 'chop', 'steps', 'serve', 'sort', 'done'];
   let stage = 0;
-  const dish = DISHES[Math.floor(Math.random() * DISHES.length)];
+  let dish = DISHES[Math.floor(Math.random() * DISHES.length)];
+  // freestyle (רמות 2-3 ב-2D): בחירה חופשית של הילדה, לסירוגין עם הזמנת לקוח
+  const freestyle = lvl >= 2 && (prog.visits % 2 === 1);
   w.progressInit(6);
 
   const CAMS = [ // מוקד מצלמה לכל שלב (קרוב לאזור הפעולה — קריטי בנייד)
@@ -134,7 +136,8 @@ function startChef3D(root) {
   function stageRecipe() {
     cleanupStage();
     w.banner('בחרי מה מכינים היום במטבח', null);
-    speak('בחרי מה מכינים היום במטבח', () => speak('הלקוחה ביקשה ' + dish.name + '!'));
+    if (!freestyle) speak('בחרי מה מכינים היום במטבח', () => speak('הלקוחה ביקשה ' + dish.name + '!'));
+    else speak('בחרי מה מכינים היום במטבח');
     const stand = w.group(-2.2, 0, 1.2); stageObjs.push(stand);
     w.box(2.6, .8, .9, '#8d6e63', 0, .4, 0, stand);
     w.box(2.8, .1, 1, '#fdf6ee', 0, .85, 0, stand);
@@ -152,6 +155,7 @@ function startChef3D(root) {
       accepts: () => true,
       onDrop: (d) => {
         const idx = stageDrags.indexOf(d);
+        if (freestyle && DISHES[idx]) dish = DISHES[idx]; // בחירה חופשית — כל מנה מתקבלת
         if (DISHES[idx] && DISHES[idx].id === dish.id) {
           sfx('good'); speak('יופי! בחרת נכון'); d.grp.visible = false;
           w.progressStep(); setTimeout(() => setStage(1), 1600);
