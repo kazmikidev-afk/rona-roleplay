@@ -10,7 +10,7 @@ function startVet3D(root){
  renderer.setSize(W(),H());
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
  renderer.outputEncoding=THREE.sRGBEncoding;
- renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.8;
  renderer.domElement.className='vet3d-canvas';
  root.appendChild(renderer.domElement);
 
@@ -32,8 +32,8 @@ function startVet3D(root){
  camera.position.copy(camBase);camera.lookAt(lookCur);
 
  // תאורה: שמש חמה + מילוי רך
- const hemi=new THREE.HemisphereLight('#fff7ea','#d9b8a0',.55);scene.add(hemi);
- const sun=new THREE.DirectionalLight('#fff1da',1.15);
+ const hemi=new THREE.HemisphereLight('#fff7ea','#d9b8a0',.45);scene.add(hemi);
+ const sun=new THREE.DirectionalLight('#fff1da',.95);
  sun.position.set(3.6,6.5,4.2);sun.castShadow=true;
  sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-6;sun.shadow.camera.right=6;
  sun.shadow.camera.top=7;sun.shadow.camera.bottom=-3;sun.shadow.camera.far=20;sun.shadow.bias=-.0004;
@@ -48,17 +48,17 @@ function startVet3D(root){
   m.position.set(x,y,z);m.castShadow=m.receiveShadow=true;(parent||scene).add(m);return m}
 
  // --- החדר ---
- const floor=new THREE.Mesh(new THREE.PlaneGeometry(26,26),mat('#c97f36',.95));
+ const floor=new THREE.Mesh(new THREE.PlaneGeometry(26,26),mat('#bf7423',.95));
  floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
- const wallB=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#f3bd76',.95));
+ const wallB=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#f0ac55',.95));
  wallB.position.set(0,5,-4.4);wallB.receiveShadow=true;scene.add(wallB);
- const wallL=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#94dcb0',.95));
+ const wallL=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#6fd39f',.95));
  wallL.rotation.y=Math.PI/2;wallL.position.set(-6.5,5,0);wallL.receiveShadow=true;scene.add(wallL);
- const wallR=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#94dcb0',.95));
+ const wallR=new THREE.Mesh(new THREE.PlaneGeometry(26,10),mat('#6fd39f',.95));
  wallR.rotation.y=-Math.PI/2;wallR.position.set(6.5,5,0);wallR.receiveShadow=true;scene.add(wallR);
  box(26,.22,.12,'#ffffff',0,.11,-4.34); // פנל תחתון
- const rug=cyl(2.3,2.3,.03,'#ff8fb0',0,.015,1.3,scene,40);rug.receiveShadow=true;
- cyl(1.7,1.7,.032,'#ffb3cd',0,.016,1.3,scene,40);
+ const rug=cyl(2.3,2.3,.03,'#ff6f9f',0,.015,1.3,scene,40);rug.receiveShadow=true;
+ cyl(1.7,1.7,.032,'#ff9cc4',0,.016,1.3,scene,40);
 
  // חלון עם שמש
  const winG=new THREE.Group();winG.position.set(-2.4,3,-4.34);scene.add(winG);
@@ -94,7 +94,7 @@ function startVet3D(root){
  // מגש הכלים
  const trayY=.78;
  box(3.4,.1,.85,'#ffffff',0,trayY-.05,2.05);
- box(3.2,.05,.7,'#ff9fc8',0,trayY+.01,2.05);
+ box(3.2,.05,.7,'#ff85bb',0,trayY+.01,2.05);
  box(3.5,.06,.95,'#dfe9f2',0,trayY-.13,2.05);
 
  // --- רקס הכלבלב ---
@@ -263,13 +263,17 @@ function startVet3D(root){
   bone:'רקס רעב אחרי הטיפול! גררי את העצם אל הקערה'};
  // מוקד מבט לכל שלב - מסגר את הדמות והמטרה יחד בלי שהמטרה נחתכת או מוסתרת
  const stageLook={pet:[0,1.6,.15],stetho:[0,1.55,.3],thermo:[0,1.85,.1],bandage:[-.35,1.6,.15],bone:[1.3,1.0,1.0],done:[0,1.78,.2]};
+ // בטלפון צר שלב העצם זקוק למוקד מבט מתון יותר - אחרת רקס נחתך משמאל ונראה קטן
+ const stageLookMobile={bone:[.9,1.1,.7]};
+ // ובשלב העצם בטלפון גם מתרחקים מעט כדי שהקערה והטבעת יישארו בתוך הפריים
+ let zoomCur=0,zoomTarget=0;
  function activeToolId(){const s=STAGES[stage];return(s==='stetho'||s==='thermo'||s==='bandage'||s==='bone')?s:null}
- const GRAY=new THREE.Color('#9aa2ad');
+ const GRAY=new THREE.Color('#8f97a3');
  function updateTools(){toolDefs.forEach(d=>{const t=tools[d.id],on=d.id===activeToolId();
   t.active=on;
   t.grp.traverse(o=>{if(o.isMesh&&o!==t.halo&&o!==t.arrow){o.material.transparent=false;o.material.opacity=1;
-   o.material.color.copy(o.userData.baseColor);if(!on)o.material.color.lerp(GRAY,.3)}});
-  t.ped.material.color.set(on?d.col:'#ccd6e2');
+   o.material.color.copy(o.userData.baseColor);if(!on)o.material.color.lerp(GRAY,.45)}});
+  t.ped.material.color.set(on?d.col:'#b8c5d6');
   t.halo.visible=on})}
  function updateRing(){hideRings();const s=STAGES[stage];
   if(s==='stetho')ringAt(rings.heart,worldPos(body).add(new THREE.Vector3(-.1,.15,.45)),true);
@@ -277,7 +281,10 @@ function startVet3D(root){
   else if(s==='bandage')ringAt(rings.scratch,worldPos(scratch).add(new THREE.Vector3(-.06,0,.12)),true);
   else if(s==='bone'){ringAt(rings.bowl,worldPos(bowlG).add(new THREE.Vector3(0,.42,0)),false);rings.bowl.userData.base=1.4}
   else rings.bowl.userData.base=1}
- function updateLook(){const L=stageLook[STAGES[stage]]||stageLook.pet;lookTarget.set(L[0],L[1],L[2])}
+ function updateLook(){const s=STAGES[stage];const portrait=W()/H()<.75;
+  const L=(portrait&&stageLookMobile[s])?stageLookMobile[s]:(stageLook[s]||stageLook.pet);
+  lookTarget.set(L[0],L[1],L[2]);
+  zoomTarget=(portrait&&s==='bone')?1.5:0}
  function gotoStage(i){stage=i;setPaws(Math.min(i,5));updateTools();updateRing();updateLook();
   const s=STAGES[stage];if(stageInstr[s])sayStageInstr(stageInstr[s])}
 
@@ -384,7 +391,7 @@ function startVet3D(root){
   sayStageInstr('רקס מרגיש הרבה יותר טוב!','רקס מרגיש הרבה יותר טוב! כל הכבוד רונה!');
   const again=el('button','big-btn vet3d-again','<svg viewBox="0 0 100 100" width="1em" height="1em" style="display:inline-block;vertical-align:-2px"><g fill="none" stroke="currentColor" stroke-width="11" stroke-linecap="round"><path d="M78 50 a28 28 0 1 1 -10 -21"/><path d="M71 11 v20 h-20"/></g></svg> שחקי שוב');
   again.onclick=()=>{cleanup();root.innerHTML='';startVet3DInto(root)};
-  instrBox.appendChild(again)}
+  hud.appendChild(again)}
 
  // פרטים זעירים של חיים: אבק מרחף
  const dustG=new THREE.BufferGeometry();const dustN=40;const dustPos=new Float32Array(dustN*3);
@@ -441,8 +448,10 @@ function startVet3D(root){
    w.set(w.ease(k));if(k>=1){tweens.splice(i,1);if(w.done)w.done()}}
   // מצלמה: מוקד משתנה לפי שלב + נדנוד עדין + פרלקסה
   lookCur.lerp(lookTarget,Math.min(1,dt*3.5));
+  zoomCur+=(zoomTarget-zoomCur)*Math.min(1,dt*3.5);
   camera.position.x=camBase.x+Math.sin(t*.4)*.06+parX*parF;
   camera.position.y=camBase.y+Math.sin(t*.53)*.04-parY*parF*.55;
+  camera.position.z=camBase.z+zoomCur;
   camera.lookAt(lookCur);
   renderer.render(scene,camera)}
  anim();
