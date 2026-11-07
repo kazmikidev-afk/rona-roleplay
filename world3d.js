@@ -226,6 +226,14 @@ function startWorld3D(root, opts) {
     rubs.push(r); return r;
   }
 
+  // --- התקדמות: דרך STATE/saveState של האפליקציה בלבד (לא localStorage גולמי — נמחק בכתיבה-על). ---
+  // loadState עושה Object.assign(STATE,s) ולכן מפתחות חדשים נשמרים. לקרוא/לכתוב רק דרך כאן.
+  function getProgress(key) { return (typeof STATE !== 'undefined' && STATE[key]) || null }
+  function saveProgress(key, value) {
+    if (typeof STATE === 'undefined' || typeof saveState !== 'function') return;
+    STATE[key] = value; saveState();
+  }
+
   // --- לולאה וטיקים ---
   const ticks = [];
   function onTick(fn) { ticks.push(fn) }
@@ -244,7 +252,7 @@ function startWorld3D(root, opts) {
     THREE, scene, camera, renderer, root, hud, SVG,
     mat, box, ball, cyl, group, noRay, buildRoom,
     banner, progressInit, progressStep, endPanel,
-    makeDraggable, addDropTarget, setActiveTool, registerRub, screenPos, onTick,
+    makeDraggable, addDropTarget, setActiveTool, registerRub, screenPos, onTick, getProgress, saveProgress,
     camBase, camLook,
     dispose() { alive = false; removeEventListener('resize', onRes); renderer.dispose(); root.innerHTML = '' }
   };
