@@ -11,6 +11,8 @@ function pickVoice(){const vs=speechSynthesis.getVoices();heVoice=vs.find(v=>v.l
 if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
 function speak(t){if(STATE.muted||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();
  const u=new SpeechSynthesisUtterance(t);u.lang='he-IL';if(heVoice)u.voice=heVoice;u.rate=.95;u.pitch=1.05;speechSynthesis.speak(u)}catch(e){}}
+// רמז לילדה: גם בקול וגם על המסך (למקרה שאין קול עברי במכשיר)
+function sayHint(t){speak(t);if(t)toast(t)}
 let AC=null;function ac(){if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}
 function tone(f,d,type,g,when){if(STATE.muted)return;try{const c=ac(),o=c.createOscillator(),v=c.createGain();o.type=type||'sine';o.frequency.value=f;
  v.gain.setValueAtTime(g||.12,c.currentTime+(when||0));v.gain.exponentialRampToValueAtTime(.001,c.currentTime+(when||0)+d);
@@ -45,7 +47,7 @@ function show(fn,title,push=true){if(push&&show._cur)navStack.push(show._cur);sh
 function goBack(){const p=navStack.pop();if(p){show._cur=null;show(p.fn,p.title,false)}}
 backBtn.onclick=()=>{speak('');goBack()};
 document.getElementById('btn-sound').onclick=toggleMute;
-document.getElementById('btn-parents').onclick=()=>show(parentsScreen,'להורים');
+document.getElementById('btn-parents').onclick=()=>{sfx('tick');parentGate()};
 
 // --- מסך בית ---
 function homeScreen(sc){
@@ -135,15 +137,18 @@ function paramsFor(type,lvl,ctx){
    const items=[];cats.forEach(c=>sample(c.items,[0,2,2,3][lvl]).forEach(e=>items.push({e,bin:c.id})));
    return{bins:cats.map(c=>({id:c.id,e:c.e,n:c.n})),items}}
   case 'dressup':return{groups:[{key:'costume',q:'איזו תלבושת לבמה?',opts:COSTUMES.map(c=>({e:c,v:c}))},
-   {key:'lights',q:'איזה צבע תאורה?',opts:LIGHTS.map(c=>({c,v:c}))}]};
+   {key:'lights',q:'איזה צבע תאורה?',opts:LIGHTS.map(c=>({c:c.c,n:c.n,v:c.c}))}]};
   case 'picksong':return{groups:[{key:'song',q:'איזה שיר נשיר?',opts:SONGS.map(s=>({e:s.e,n:s.n,v:s.id}))}]};
   case 'steps':{const dish=CHEF_DISHES.find(d=>d.id===STATE.choices.dish)||CHEF_DISHES[0];
    const all=DISH_STEPS[dish.id]||DISH_STEPS.salad;
    return{cards:all.slice(0,Math.min(all.length,2+lvl)),hint:'מה עושים קודם?'}}
   case 'recipe':return{groups:[{key:'dish',q:'מה מכינים היום?',opts:CHEF_DISHES.map(d=>({e:d.e,n:d.n,v:d.id}))}]};
-  case 'serve':return{groups:[{key:'plate',q:'איך נקשט את הצלחת?',opts:[{e:'😊',n:'חיוכים',v:'😊'},{e:'😍',n:'לבבות',v:'😍'},{e:'⭐',n:'כוכבים',v:'⭐'}]}]};
-  case 'rhythm':return{beats:[0,4,6,8][lvl],speed:2.2+lvl*.6};
-  case 'chop':return{n:[0,3,5,6][lvl],veggies:['🥕','🍅','🥒','🌽','🥦','🧅','🫑']};
+  case 'serve':{const dish=CHEF_DISHES.find(d=>d.id===STATE.choices.dish)||CHEF_DISHES[0];
+   return{dish:dish.e,options:[{e:'😊',n:'חיוכים',v:'😊'},{e:'😍',n:'לבבות',v:'😍'},{e:'⭐',n:'כוכבים',v:'⭐'}]}}
+  case 'rhythm':{const song=SONGS.find(s=>s.id===STATE.choices.song);
+   return{beats:[0,4,6,8][lvl],speed:2.2+lvl*.6,stage:{costume:STATE.choices.costume,lights:STATE.choices.lights,song:song?song.n:null}}}
+  case 'chop':{const dish=CHEF_DISHES.find(d=>d.id===STATE.choices.dish)||CHEF_DISHES[0];
+   return{n:[0,3,5,6][lvl],veggies:dish.ing}}
   case 'feed':{const right=ANIMAL_FOOD[ch.c[0]]||'🍎';const wrong=sample(Object.values(ANIMAL_FOOD).filter(f=>f!==right),2+lvl);
    return{need:1,options:shuffle([{e:right,good:true}].concat(wrong.map(e=>({e})))),hint:'לכל חיה יש אוכל שמתאים לה'}}
   case 'temp':return{};
@@ -153,9 +158,10 @@ function paramsFor(type,lvl,ctx){
 function runVisit(role,lvl,ci){
  const ch=role.levels[lvl-1][ci];let ai=0;
  const visitTitle=role.name+' · '+ch.c[1];
+ const baseDepth=navStack.length;
  const intro=(sc)=>{sc.appendChild(el('h1','screen-title',role.emoji+' '+role.name));
   const st=el('div','char-stage',`<div class="ce">${ch.c[0]}</div><div class="csay">"${ch.say}"</div>`);sc.appendChild(st);
-  speak(ch.c[1]+' אומרת: '+ch.say);
+  speak(ch.c[1]+': '+ch.say);
   const b=el('button','big-btn','בואי נעזור! 💪');b.onclick=()=>{sfx('tick');next()};const cc=el('div','center-col');cc.appendChild(b);sc.appendChild(cc)};
  const next=()=>{if(ai>=ch.a.length){reward();return}
   const [type,alvl]=ch.a[ai];ai++;
@@ -166,13 +172,13 @@ function runVisit(role,lvl,ci){
    const rep=el('button','','🔊');rep.setAttribute('aria-label','שמע שוב');rep.onclick=()=>speak(INSTR[type]||'');instr.appendChild(rep);wrap.appendChild(instr);
    const area=el('div','play-area');wrap.appendChild(area);sc.appendChild(wrap);
    speak(INSTR[type]||'');
-   const runEngine=()=>GAMES[engineType(type)].run(area,paramsFor(type,alvl,{role,char:ch}),()=>{sfx('good');next()});
+   const runEngine=()=>GAMES[engineType(type)].run(area,paramsFor(type,alvl,{role,char:ch}),once(()=>{sfx('good');next()}));
    // זרימות מיוחדות: בחירת צבע ראשונה לפני טלאי/פלסטר, בחירת מנה לפני איסוף
-   if(type==='patch'&&!STATE.choices.patchColor){GAMES.choiceSave.run(area,{groups:[{key:'patchColor',q:'איזה צבע טלאי קסם?',opts:PATCHES.map(c=>({c,v:c}))}]},()=>{area.innerHTML='';speak(INSTR.patch);runEngine()});return}
-   if(type==='bandage'&&!STATE.choices.bandageColor){GAMES.choiceSave.run(area,{groups:[{key:'bandageColor',q:'איזה צבע פלסטר?',opts:BANDAGES.map(c=>({c,v:c}))}]},()=>{area.innerHTML='';speak(INSTR.bandage);runEngine()});return}
+   if(type==='patch'&&!STATE.choices.patchColor){GAMES.choiceSave.run(area,{groups:[{key:'patchColor',q:'איזה צבע טלאי קסם?',opts:PATCHES.map(c=>({c:c.c,n:c.n,v:c.c}))}]},()=>{area.innerHTML='';speak(INSTR.patch);runEngine()});return}
+   if(type==='bandage'&&!STATE.choices.bandageColor){GAMES.choiceSave.run(area,{groups:[{key:'bandageColor',q:'איזה צבע פלסטר?',opts:BANDAGES.map(c=>({c:c.c,n:c.n,v:c.c}))}]},()=>{area.innerHTML='';speak(INSTR.bandage);runEngine()});return}
    if(type==='gather'&&!STATE.choices.dish){GAMES.choiceSave.run(area,{groups:[{key:'dish',q:'קודם בוחרים מנה!',opts:CHEF_DISHES.map(d=>({e:d.e,n:d.n,v:d.id}))}]},()=>{area.innerHTML='';speak(INSTR.gather);runEngine()});return}
    runEngine();
-  },visitTitle)};
+  },visitTitle,false)};
  const reward=()=>{ // פרס בסוף ביקור
   STATE.done[role.id]=STATE.done[role.id]||{};STATE.done[role.id][lvl]=STATE.done[role.id][lvl]||{};
   STATE.done[role.id][lvl][ci]=true;
@@ -184,14 +190,14 @@ function runVisit(role,lvl,ci){
   show(sc=>{const cc=el('center-col'.replace('$',''),'center-col');sc.appendChild(cc);
    cc.appendChild(el('h1','screen-title',newBadge?'🏅 תג חדש!':'⭐ כל הכבוד!'));
    cc.appendChild(el('div','reward-stars',newBadge?'🏅':'⭐'));
-   const line=newBadge?`השלמת את רמה ${lvl} וקיבלת ${role.badge}!`:`עזרת ל${ch.c[1]}! היא כבר מרגישה טוב יותר`;
+   const line=newBadge?`השלמת את רמה ${lvl} וקיבלת ${role.badge}!`:`עזרת ל${ch.c[1]}! כל הכבוד!`;
    cc.appendChild(el('p','screen-sub',line));speak(line);sfx(newBadge?'applause':'sparkle');confettiBurst(newBadge?18:10);
    if(newBadge&&lvl<3)cc.appendChild(el('p','screen-sub',`רמה ${lvl+1} נפתחה!`));
-   const b=el('button','big-btn','המשך ▶');b.onclick=()=>{sfx('tick');show(levelScreen.bind(null,role,lvl),role.name+' · רמה '+lvl)};cc.appendChild(b);
-  },visitTitle)};
+   const b=el('button','big-btn','המשך ▶');b.onclick=()=>{sfx('tick');navStack.length=baseDepth;show._cur=null;show(levelScreen.bind(null,role,lvl),role.name+' · רמה '+lvl)};cc.appendChild(b);
+  },visitTitle,false)};
  show(intro,visitTitle);
 }
-function engineType(t){return({toolpick:'pick',feed:'pick',brush:'scrub',furscrub:'scrub',patch:'dragOne',bandage:'dragOne',stetho:'dragOne',snacksort:'sort',shelfsort:'sort',foodsort:'sort',gallery:'sort',count:'countTap',dayorder:'order',steps:'order',simon:'simon',story:'story',dressup:'choiceSave',picksong:'choiceSave',recipe:'choiceSave',serve:'choiceSave',rhythm:'rhythm',change:'change',share:'share',temp:'temp',wobbly:'wobbly',chop:'chop',find:'find',gather:'find'})[t]||t}
+function engineType(t){return({toolpick:'pick',feed:'pick',brush:'scrub',furscrub:'scrub',patch:'dragOne',bandage:'dragOne',stetho:'dragOne',snacksort:'sort',shelfsort:'sort',foodsort:'sort',gallery:'sort',count:'countTap',dayorder:'order',steps:'order',simon:'simon',story:'story',dressup:'choiceSave',picksong:'choiceSave',recipe:'choiceSave',serve:'serve',rhythm:'rhythm',change:'change',share:'share',temp:'temp',wobbly:'wobbly',chop:'chop',find:'find',gather:'find'})[t]||t}
 
 // --- תגים ---
 function badgesScreen(sc){
@@ -199,13 +205,25 @@ function badgesScreen(sc){
  const grid=el('div','badge-grid');
  ROLES.forEach(r=>{const b=(STATE.badges[r.id]||[]);
   for(let l=0;l<3;l++){const got=b[l];
-   grid.appendChild(el('div','badge-cell',`<div class="be">${got?'🏅':'▫️'}</div><div class="bn">${r.emoji} ${r.name}<br>רמה ${l+1}</div>`))}});
+   grid.appendChild(el('div','badge-cell',`<div class="be${got?'':' locked'}">🏅</div><div class="bn">${r.emoji} ${r.name}<br>רמה ${l+1}</div>`))}});
  sc.appendChild(grid);
  const cc=el('div','row-btns');const h=el('button','pill-btn','🏠 לבית');h.onclick=()=>show(homeScreen,'עולם התפקידים של רונה');cc.appendChild(h);sc.appendChild(cc);
  const total=Object.values(STATE.badges).flat().filter(Boolean).length;
  speak(total?`יש לך ${total} תגים! כל הכבוד`:'עוד אין תגים. בואי נשחק ונרוויח!')}
 
 // --- פינת הורים ---
+// שער הורים: שאלת חיבור פשוטה למבוגר, בלי הקראה
+function parentGate(){const a=4+Math.floor(Math.random()*5),b=3+Math.floor(Math.random()*6),ans=a+b;
+ const opts=shuffle([ans,ans+1,ans-1,ans+2]);
+ show(sc=>{sc.appendChild(el('h1','screen-title','פינה להורים 👪'));
+  sc.appendChild(el('p','screen-sub','המסך הזה מיועד למבוגרים. כדי להיכנס, פתרו:'));
+  const cc=el('div','center-col');
+  cc.appendChild(el('div','gate-q',`${a} + ${b} = ?`));
+  const row=el('div','opt-row');
+  opts.forEach(o=>{const bt=el('button','opt-btn',''+o);row.appendChild(bt);
+   bt.onclick=()=>{if(o===ans){sfx('good');show(parentsScreen,'להורים')}
+    else{sfx('oops');toast('לא נכון');show(homeScreen,'עולם התפקידים של רונה')}}});
+  cc.appendChild(row);sc.appendChild(cc)},'להורים')}
 function parentsScreen(sc){
  const p=el('div','parent-panel');
  p.innerHTML=`<h3>על המשחק</h3>
