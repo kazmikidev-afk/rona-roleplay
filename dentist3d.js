@@ -67,7 +67,8 @@ function startDentist3D(root) {
     'פילי הפיל': { col: '#78909c', feat: 'elephant' },
     'פיפי התוכי': { col: '#039be5', feat: 'parrot' },
     'ליאו האריה': { col: '#f57c00', feat: 'lion' },
-    'רקס הכלב': { col: '#a07548', feat: 'dog' }
+    'רקס הכלב': { col: '#a07548', feat: 'dog' },
+    "ששי הג'ירפה": { col: '#e89b3f', feat: 'giraffe' }
   };
   const GIRLS = ['נועה הביישנית', 'מאי מלאת המרץ', 'טלי', 'דנה', 'יעלה הבמאית', 'סבתא שרה'];
   const SKIN = ['#ffdfc4', '#f1c27d', '#e0ac69'];
@@ -96,6 +97,7 @@ function startDentist3D(root) {
   if (feat === 'parrot') { const bk = w.cyl(.02, .1, .2, '#ff9800', 0, .06, .44, headG); bk.rotation.x = Math.PI / 2; [-.1, 0, .1].forEach((dx, i) => { const f = w.cyl(.01, .06, .22, ['#0288d1', '#ffeb3b', '#0288d1'][i], dx, .52, -.05, headG); f.rotation.z = dx * 2 }) } // מקור + ציצת נוצות
   if (feat === 'lion') { for (let a = 0; a < 8; a++) { const th = a / 8 * Math.PI * 2; w.ball(.14, '#e65100', Math.cos(th) * .42, Math.sin(th) * .42 + .02, -.18, headG) } } // רעמה
   if (feat === 'dog') { const l = w.ball(.13, '#6d4c41', -.38, .25, 0, headG, .6, 1.6, .7); l.rotation.z = .5; const r = w.ball(.13, '#6d4c41', .38, .25, 0, headG, .6, 1.6, .7); r.rotation.z = -.5 } // אוזניים שמוטות
+  if (feat === 'giraffe') { w.cyl(.03, .03, .14, '#8d5a1e', -.14, .62, -.05, headG); w.cyl(.03, .03, .14, '#8d5a1e', .14, .62, -.05, headG); w.ball(.055, '#8d5a1e', -.14, .71, -.05, headG); w.ball(.055, '#8d5a1e', .14, .71, -.05, headG); w.ball(.1, pcol, -.34, .3, -.02, headG, .6, 1.1, .6); w.ball(.1, pcol, .34, .3, -.02, headG, .6, 1.1, .6); [[-.22, .12], [.2, -.08], [0, .3]].forEach(p => w.ball(.06, '#8d5a1e', p[0], p[1], .32, headG, 1, 1, .5)) } // קרניים+אוזניים+כתמים
   if (feat === 'human') {
     w.ball(.46, hairC, 0, .16, -.12, headG, 1.05, .8, .95); // קערת שיער
     if (GIRLS.includes(cust.c[1])) { w.ball(.11, hairC, -.44, .18, -.05, headG); w.ball(.11, hairC, .44, .18, -.05, headG) } // קוקו
