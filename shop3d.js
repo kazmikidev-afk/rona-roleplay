@@ -308,9 +308,13 @@ function startShop3D(root) {
     const p = w.getProgress('shop3d') || { visits: 0, stars: 0 };
     p.visits++; p.stars++;
     w.saveProgress('shop3d', p);
-    w.banner('כל הכבוד! סיימת!', null);
-    w.endPanel('הלקוחה מאושרת! את מוכרת אלופה!', 'שחקי שוב', () => location.reload());
-    speak('הלקוחה מאושרת! את מוכרת אלופה!');
+    // גשר התקדמות: הביקור נספר כלקוח שהושלם ברמה הנוכחית (אותו מבנה כמו ה-2D)
+    const aw = (typeof bridge3DAward === 'function') ? bridge3DAward('shop') : null;
+    const badgeLine = aw && aw.newBadge;
+    w.banner(badgeLine ? '🏅 תג חדש!' : 'כל הכבוד! סיימת!', null);
+    w.endPanel(badgeLine ? 'קיבלת תג מוכרת!' : 'הלקוחה מאושרת! את מוכרת אלופה!', 'שחקי שוב', () => location.reload());
+    if (badgeLine) speak('השלמת את רמה ' + aw.lvl + ' וקיבלת תג מוכרת!', () => { if (aw.newLevel) speak('רמה ' + (aw.lvl + 1) + ' נפתחה!') });
+    else speak('הלקוחה מאושרת! את מוכרת אלופה!');
   }
 
   const ticks = [];
