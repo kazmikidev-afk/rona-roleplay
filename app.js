@@ -4,13 +4,23 @@ let STATE={unlocked:{},done:{},badges:{},choices:{},muted:false};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(LS_KEY));if(s)STATE=Object.assign(STATE,s)}catch(e){}}
 function saveState(){try{localStorage.setItem(LS_KEY,JSON.stringify(STATE))}catch(e){}}
 loadState();
+// מיגרציה: אם רמה סוימה לפני שנוספו רמות חדשות, פותחים את הבאה אוטומטית
+function normalizeState(){if(typeof ROLES==='undefined')return;ROLES.forEach(r=>{const NL=r.levels.length;let u=STATE.unlocked[r.id]||1;
+ while(u<NL&&(STATE.done[r.id]||{})[u]&&r.levels[u-1].every((_,i)=>STATE.done[r.id][u][i]))u++;
+ STATE.unlocked[r.id]=u});saveState()}
+normalizeState();
 
 // --- קול והקראה ---
 let heVoice=null;
 function pickVoice(){const vs=speechSynthesis.getVoices();heVoice=vs.find(v=>v.lang&&v.lang.startsWith('he'))||null}
 if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
-function speak(t){if(STATE.muted||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(t);u.lang='he-IL';if(heVoice)u.voice=heVoice;u.rate=.95;u.pitch=1.05;speechSynthesis.speak(u)}catch(e){}}
+// הקראה: then מופעל כשהמשפט נגמר (או אחרי זמן בטיחות), כדי שהמעבר למסך הבא לא יקטע את המשפט באמצע
+function speak(t,then){const go=then?once(then):null;
+ if(STATE.muted||!('speechSynthesis' in window)){if(go)setTimeout(go,500);return}
+ try{speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(t);u.lang='he-IL';if(heVoice)u.voice=heVoice;u.rate=.95;u.pitch=1.05;
+ if(go){u.onend=go;u.onerror=go;setTimeout(go,Math.min(9000,1400+t.length*170))}
+ speechSynthesis.speak(u)}catch(e){if(go)go()}}
 // רמז לילדה: גם בקול וגם על המסך (למקרה שאין קול עברי במכשיר)
 function sayHint(t){speak(t);if(t)toast(t)}
 let AC=null;function ac(){if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();return AC}
@@ -56,8 +66,8 @@ function homeScreen(sc){
  const grid=el('div','grid-roles');
  ROLES.forEach(r=>{const b=el('button','role-card');b.style.background=r.grad;
   const earned=(STATE.badges[r.id]||[]).filter(Boolean).length;
-  b.innerHTML=`<div class="re">${r.emoji}</div><div class="rn">${r.name}</div><div class="rs">${'⭐'.repeat(earned)}${'☆'.repeat(3-earned)}</div>`;
-  b.onclick=()=>{sfx('tick');speak(r.name);show(roleScreen.bind(null,r),r.name)};grid.appendChild(b)});
+  b.innerHTML=`<div class="re">${r.emoji}</div><div class="rn">${r.name}</div><div class="rs">${'⭐'.repeat(earned)}${'☆'.repeat(r.levels.length-earned)}</div>`;
+  b.onclick=()=>{sfx('tick');show(roleScreen.bind(null,r),r.name)};grid.appendChild(b)});
  sc.appendChild(grid);
  const foot=el('div','home-foot');
  const badges=el('button','pill-btn','🏅 התגים שלי');badges.onclick=()=>{sfx('tick');show(badgesScreen,'התגים שלי')};foot.appendChild(badges);
@@ -72,7 +82,7 @@ function roleScreen(role,sc){
  sc.appendChild(el('p','screen-sub',role.intro));speak(role.intro);
  const unl=STATE.unlocked[role.id]||1;
  const lvlRow=el('div','lvl-row');
- for(let l=1;l<=3;l++){const locked=l>unl;
+ for(let l=1;l<=role.levels.length;l++){const locked=l>unl;
   const b=el('button','lvl-btn'+(locked?' locked':''),`<span>${locked?'🔒':''} רמה ${l}</span><span>${'⭐'.repeat(l)}</span>`);
   b.onclick=()=>{if(locked){sfx('oops');speak('קודם משלימים את הרמה הקודמת');toast('משלימים קודם את רמה '+(l-1));return}
    sfx('tick');show(levelScreen.bind(null,role,l),role.name+' · רמה '+l)};lvlRow.appendChild(b)}
@@ -88,7 +98,7 @@ function roleScreen(role,sc){
 }
 function levelScreen(role,lvl,sc){
  sc.appendChild(el('h1','screen-title',role.emoji+' רמה '+lvl));
- sc.appendChild(el('p','screen-sub','למי נעזור הפעם?'));
+ sc.appendChild(el('p','screen-sub','למי נעזור הפעם?'));speak('למי נעזור הפעם? בחרי דמות');
  const done=(STATE.done[role.id]||{})[lvl]||{};
  const chars=el('div','char-row');
  role.levels[lvl-1].forEach((ch,i)=>{const d=done[i];
@@ -109,39 +119,39 @@ function paramsFor(type,lvl,ctx){
  const ch=ctx.char;
  switch(type){
   case 'toolpick':{const opts=[{e:'🪥',n:'מברשת',good:true},{e:'🧴',n:'משחה',good:true},{e:'🥄',n:'כף'},{e:'🪮',n:'מסרק'},{e:'🖍️',n:'צבע'}];
-   return{need:2,options:opts.slice(0,1+lvl*2>3?2+lvl:3),hint:'מברשת ומשחה מנקות שיניים'}}
-  case 'brush':return{emoji:'🦷',doneEmoji:'✨',goal:12+lvl*12,countTo:2+lvl*2};
-  case 'furscrub':return{emoji:ch.c[0],doneEmoji:ch.c[0],goal:10+lvl*10,countTo:2+lvl*2};
-  case 'patch':return{tool:`<span class="light-dot" style="background:${STATE.choices.patchColor||'#ffd54a'};width:46px;height:46px"></span>`,target:'🦷💫',doneEmoji:'🦷✨',decoys:['🧽','🧴'],spots:lvl>=3?2:1,pickSay:'עכשיו על הנקודה!'};
-  case 'bandage':return{tool:`<span class="light-dot" style="background:${STATE.choices.bandageColor||'#ff8fb3'};width:46px;height:46px;border-radius:12px"></span>`,target:ch.c[0]+'❗',doneEmoji:ch.c[0]+'🩹',decoys:['🧴','🪮'],spots:1,pickSay:'עכשיו על השריטה!'};
-  case 'stetho':return{tool:'🩺',target:ch.c[0]+'❤️',doneEmoji:ch.c[0]+'💓',decoys:['🩹','🌡️'],spots:1,pickSay:'עכשיו על הלב!'};
+   return{need:2,options:opts.slice(0,1+lvl*2>3?2+lvl:3),hint:'מברשת ומשחה מנקות שיניים',doneSay:'יופי! יש מברשת ומשחה'}}
+  case 'brush':return{emoji:'🦷',doneEmoji:'✨',goal:12+lvl*12,countTo:2+lvl*2,doneSay:'השיניים נקיות ומנצנצות!'};
+  case 'furscrub':return{emoji:ch.c[0],doneEmoji:ch.c[0],goal:10+lvl*10,countTo:2+lvl*2,doneSay:'הפרווה נקייה ומבריקה!'};
+  case 'patch':return{tool:`<span class="light-dot" style="background:${STATE.choices.patchColor||'#ffd54a'};width:46px;height:46px"></span>`,target:'🦷💫',doneEmoji:'🦷✨',decoys:['🧽','🧴'],spots:lvl>=3?2:1,pickSay:'עכשיו על הנקודה!',doneSay:'הטלאי במקום! השן תהיה בריאה'};
+  case 'bandage':return{tool:`<span class="light-dot" style="background:${STATE.choices.bandageColor||'#ff8fb3'};width:46px;height:46px;border-radius:12px"></span>`,target:ch.c[0]+'❗',doneEmoji:ch.c[0]+'🩹',decoys:['🧴','🪮'],spots:1,pickSay:'עכשיו על השריטה!',doneSay:'הפלסטר על השריטה! כבר יהיה טוב'};
+  case 'stetho':return{tool:'🩺',target:ch.c[0]+'❤️',doneEmoji:ch.c[0]+'💓',decoys:['🩹','🌡️'],spots:1,pickSay:'עכשיו על הלב!',doneSay:'שומעים את הלב! הוא פועם חזק'};
   case 'snacksort':{const n=[0,4,6,8][lvl];const goods=sample(SNACKS_GOOD,n/2).map(e=>({e,bin:'good'})),bads=sample(SNACKS_BAD,n/2).map(e=>({e,bin:'bad'}));
-   return{bins:[{id:'good',e:'😁',n:'טוב לשיניים'},{id:'bad',e:'😬',n:'רק קצת'}],items:goods.concat(bads),hint:'פירות וירקות טובים לשיניים'}}
+   return{bins:[{id:'good',e:'😁',n:'טוב לשיניים'},{id:'bad',e:'😬',n:'רק קצת'}],items:goods.concat(bads),hint:'פירות וירקות טובים לשיניים',doneSay:'מיון מושלם! השיניים שמחות'}}
   case 'foodsort':{const n=[0,4,6,8][lvl];const goods=sample(['🍎','🥪','🍐','🥚','🥕','🍌'],n/2).map(e=>({e,bin:'every'})),bads=sample(['🍕','🍰','🥤','🍟','🍩','🍬'],n/2).map(e=>({e,bin:'some'}));
-   return{bins:[{id:'every',e:'💪',n:'כל יום'},{id:'some',e:'🎉',n:'לפעמים'}],items:goods.concat(bads),hint:'אוכל בריא אוכלים כל יום'}}
+   return{bins:[{id:'every',e:'💪',n:'כל יום'},{id:'some',e:'🎉',n:'לפעמים'}],items:goods.concat(bads),hint:'אוכל בריא אוכלים כל יום',doneSay:'מיון יפה! אוכל של כל יום נותן כוח'}}
   case 'story':return{points:lvl};
   case 'share':return{total:[0,4,6,8][lvl],kids:1+lvl,item:'🖍️',kidEmojis:['👧','👦','🧒','👧🏽']};
-  case 'dayorder':return{cards:DAY_CARDS.slice(0,2+lvl),hint:'מה עושים קודם בבוקר?'};
+  case 'dayorder':return{cards:DAY_CARDS.slice(0,2+lvl),hint:'מה עושים קודם בבוקר?',doneSay:'סדר מושלם! ככה נראה היום בגן'};
   case 'simon':return{seq:sample(SIMON_MOVES,4).slice(0,1+lvl)};
   case 'gallery':{const n=2+lvl;const fr=GALLERY_FRAMES.slice(0,n);
-   return{bins:fr.map((f,i)=>({id:'f'+i,e:f.f,n:''})),items:fr.map((f,i)=>({e:f.d,bin:'f'+i})),hint:'כל ציור מתאים לצורה שלו'}}
+   return{bins:fr.map((f,i)=>({id:'f'+i,e:f.f,n:''})),items:fr.map((f,i)=>({e:f.d,bin:'f'+i})),hint:'כל ציור מתאים לצורה שלו',doneSay:'תערוכה מהממת! כל ציור במסגרת שלו'}}
   case 'find':{const n=[0,3,5,7][lvl];const list=sample(SHOP_ITEMS,n);const others=SHOP_ITEMS.filter(x=>!list.includes(x));
-   return{list,pool:list.concat(sample(others,Math.min(others.length,n+3)))}}
+   return{list,pool:list.concat(sample(others,Math.min(others.length,n+3))),doneSay:'מצאת את כל הרשימה!'}}
   case 'gather':{const dish=CHEF_DISHES.find(d=>d.id===STATE.choices.dish)||CHEF_DISHES[0];
    const n=[0,3,5,7][lvl];const list=dish.ing.slice(0,n);
    const others=SHOP_ITEMS.filter(x=>!list.includes(x));
    return{list,pool:list.concat(sample(others,Math.min(others.length,n+3)))}}
-  case 'count':return{n:[0,3,5,7][lvl],item:sample(['🍎','🍞','🫐','🥕'],1)[0],bag:'🛍️'};
+  case 'count':return{n:[0,3,5,7][lvl],item:sample(['🍎','🍞','🫐','🥕'],1)[0],bag:'🛍️',doneSay:'ספרת נכון! הכל בתיק'};
   case 'change':return{price:[0,8,7,5+Math.floor(Math.random()*2)][lvl]};
   case 'shelfsort':{const nb=Math.min(1+lvl,3);const cats=SHOP_CATS.slice(0,nb);
    const items=[];cats.forEach(c=>sample(c.items,[0,2,2,3][lvl]).forEach(e=>items.push({e,bin:c.id})));
-   return{bins:cats.map(c=>({id:c.id,e:c.e,n:c.n})),items}}
+   return{bins:cats.map(c=>({id:c.id,e:c.e,n:c.n})),items,doneSay:'המדפים מסודרים! החנות נראית נהדר'}}
   case 'dressup':return{groups:[{key:'costume',q:'איזו תלבושת לבמה?',opts:COSTUMES.map(c=>({e:c,v:c}))},
    {key:'lights',q:'איזה צבע תאורה?',opts:LIGHTS.map(c=>({c:c.c,n:c.n,v:c.c}))}]};
   case 'picksong':return{groups:[{key:'song',q:'איזה שיר נשיר?',opts:SONGS.map(s=>({e:s.e,n:s.n,v:s.id}))}]};
   case 'steps':{const dish=CHEF_DISHES.find(d=>d.id===STATE.choices.dish)||CHEF_DISHES[0];
    const all=DISH_STEPS[dish.id]||DISH_STEPS.salad;
-   return{cards:all.slice(0,Math.min(all.length,2+lvl)),hint:'מה עושים קודם?'}}
+   return{cards:all.slice(0,Math.min(all.length,2+lvl)),hint:'מה עושים קודם?',doneSay:'סדר נכון! בדיוק ככה מכינים'}}
   case 'recipe':return{groups:[{key:'dish',q:'מה מכינים היום?',opts:CHEF_DISHES.map(d=>({e:d.e,n:d.n,v:d.id}))}]};
   case 'serve':{const dish=CHEF_DISHES.find(d=>d.id===STATE.choices.dish)||CHEF_DISHES[0];
    return{dish:dish.e,options:[{e:'😊',n:'חיוכים',v:'😊'},{e:'😍',n:'לבבות',v:'😍'},{e:'⭐',n:'כוכבים',v:'⭐'}]}}
@@ -150,7 +160,7 @@ function paramsFor(type,lvl,ctx){
   case 'chop':{const dish=CHEF_DISHES.find(d=>d.id===STATE.choices.dish)||CHEF_DISHES[0];
    return{n:[0,3,5,6][lvl],veggies:dish.ing}}
   case 'feed':{const right=ANIMAL_FOOD[ch.c[0]]||'🍎';const wrong=sample(Object.values(ANIMAL_FOOD).filter(f=>f!==right),2+lvl);
-   return{need:1,options:shuffle([{e:right,good:true}].concat(wrong.map(e=>({e})))),hint:'לכל חיה יש אוכל שמתאים לה'}}
+   return{need:1,options:shuffle([{e:right,good:true}].concat(wrong.map(e=>({e})))),hint:'לכל חיה יש אוכל שמתאים לה',doneSay:'טעים! זה בדיוק האוכל בשבילה'}}
   case 'temp':return{};
   case 'wobbly':return{};
  }return{}}
@@ -171,9 +181,11 @@ function runVisit(role,lvl,ci){
    const instr=el('div','instr',`<span>${INSTR[type]||''}</span>`);
    const rep=el('button','','🔊');rep.setAttribute('aria-label','שמע שוב');rep.onclick=()=>speak(INSTR[type]||'');instr.appendChild(rep);wrap.appendChild(instr);
    const area=el('div','play-area');wrap.appendChild(area);sc.appendChild(wrap);
-   speak(INSTR[type]||'');
+   // זרימות מיוחדות: בחירת צבע ראשונה לפני טלאי/פלסטר, בחירת מנה לפני איסוף.
+   // כשיש בחירה כזאת, השאלה שלה מוקראת במקום ההוראה (שתוקרא אחרי הבחירה) - כך אחת לא חותכת את השנייה
+   const preChoice=(type==='patch'&&!STATE.choices.patchColor)||(type==='bandage'&&!STATE.choices.bandageColor)||(type==='gather'&&!STATE.choices.dish);
+   if(!preChoice)speak(INSTR[type]||'');
    const runEngine=()=>GAMES[engineType(type)].run(area,paramsFor(type,alvl,{role,char:ch}),once(()=>{sfx('good');next()}));
-   // זרימות מיוחדות: בחירת צבע ראשונה לפני טלאי/פלסטר, בחירת מנה לפני איסוף
    if(type==='patch'&&!STATE.choices.patchColor){GAMES.choiceSave.run(area,{groups:[{key:'patchColor',q:'איזה צבע טלאי קסם?',opts:PATCHES.map(c=>({c:c.c,n:c.n,v:c.c}))}]},()=>{area.innerHTML='';speak(INSTR.patch);runEngine()});return}
    if(type==='bandage'&&!STATE.choices.bandageColor){GAMES.choiceSave.run(area,{groups:[{key:'bandageColor',q:'איזה צבע פלסטר?',opts:BANDAGES.map(c=>({c:c.c,n:c.n,v:c.c}))}]},()=>{area.innerHTML='';speak(INSTR.bandage);runEngine()});return}
    if(type==='gather'&&!STATE.choices.dish){GAMES.choiceSave.run(area,{groups:[{key:'dish',q:'קודם בוחרים מנה!',opts:CHEF_DISHES.map(d=>({e:d.e,n:d.n,v:d.id}))}]},()=>{area.innerHTML='';speak(INSTR.gather);runEngine()});return}
@@ -185,14 +197,14 @@ function runVisit(role,lvl,ci){
   const lvlDone=role.levels[lvl-1].every((_,i)=>STATE.done[role.id][lvl][i]);
   let newBadge=false;
   if(lvlDone&&!(STATE.badges[role.id]||[])[lvl-1]){STATE.badges[role.id]=STATE.badges[role.id]||[];STATE.badges[role.id][lvl-1]=true;newBadge=true;
-   if(lvl<3)STATE.unlocked[role.id]=Math.max(STATE.unlocked[role.id]||1,lvl+1);else STATE.unlocked[role.id]=3}
+   if(lvl<role.levels.length)STATE.unlocked[role.id]=Math.max(STATE.unlocked[role.id]||1,lvl+1);else STATE.unlocked[role.id]=role.levels.length}
   saveState();
   show(sc=>{const cc=el('center-col'.replace('$',''),'center-col');sc.appendChild(cc);
    cc.appendChild(el('h1','screen-title',newBadge?'🏅 תג חדש!':'⭐ כל הכבוד!'));
    cc.appendChild(el('div','reward-stars',newBadge?'🏅':'⭐'));
    const line=newBadge?`השלמת את רמה ${lvl} וקיבלת ${role.badge}!`:`עזרת ל${ch.c[1]}! כל הכבוד!`;
-   cc.appendChild(el('p','screen-sub',line));speak(line);sfx(newBadge?'applause':'sparkle');confettiBurst(newBadge?18:10);
-   if(newBadge&&lvl<3)cc.appendChild(el('p','screen-sub',`רמה ${lvl+1} נפתחה!`));
+   cc.appendChild(el('p','screen-sub',line));sfx(newBadge?'applause':'sparkle');confettiBurst(newBadge?18:10);
+   if(newBadge&&lvl<role.levels.length){cc.appendChild(el('p','screen-sub',`רמה ${lvl+1} נפתחה!`));speak(line+` רמה ${lvl+1} נפתחה!`)}else speak(line);
    const b=el('button','big-btn','המשך ▶');const shownAt=Date.now();b.onclick=()=>{if(Date.now()-shownAt<800)return;sfx('tick');navStack.length=baseDepth;show._cur=null;show(levelScreen.bind(null,role,lvl),role.name+' · רמה '+lvl)};cc.appendChild(b);
   },visitTitle,false)};
  show(intro,visitTitle);
@@ -204,7 +216,7 @@ function badgesScreen(sc){
  sc.appendChild(el('h1','screen-title','🏅 התגים שלי'));
  const grid=el('div','badge-grid');
  ROLES.forEach(r=>{const b=(STATE.badges[r.id]||[]);
-  for(let l=0;l<3;l++){const got=b[l];
+  for(let l=0;l<r.levels.length;l++){const got=b[l];
    grid.appendChild(el('div','badge-cell',`<div class="be${got?'':' locked'}">🏅</div><div class="bn">${r.emoji} ${r.name}<br>רמה ${l+1}</div>`))}});
  sc.appendChild(grid);
  const cc=el('div','row-btns');const h=el('button','pill-btn','🏠 לבית');h.onclick=()=>show(homeScreen,'עולם התפקידים של רונה');cc.appendChild(h);sc.appendChild(cc);
