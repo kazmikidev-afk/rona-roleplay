@@ -299,7 +299,7 @@ function openChef3D(){
 }
 
 function openShop3D(){
- show(sc=>{const wrap=el('div','vet3d-wrap');sc.appendChild(wrap);window.__scene3dCleanup=startShop3D(wrap)},'החנות התלת-ממדית ✨');
+ show(sc=>{const wrap=el('div','vet3d-wrap');sc.appendChild(wrap);window.__scene3dCleanup=startShop3D(wrap)},'החנות התלת-ממדית');
 }
 
 // --- תגים ---

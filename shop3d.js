@@ -20,7 +20,7 @@ function startShop3D(root) {
   w.box(.15, 2.1, .9, '#6d4c41', -3.2, 1.05, -3.3);
   w.box(.15, 2.1, .9, '#6d4c41', 3.2, 1.05, -3.3);
   // מקרר (למוצרי חלב/משקאות)
-  const fridgeG = w.group(-2.2, 0, 1.2);
+  const fridgeG = w.group(-1.55, 0, 1.2);
   w.box(1.5, 2.2, 1, '#e3f2fd', 0, 1.1, 0, fridgeG);
   w.box(1.54, .05, 1.04, '#b0bec5', 0, 1.15, 0, fridgeG);
   // דלפק קופה + קופה
@@ -30,13 +30,13 @@ function startShop3D(root) {
   w.box(.7, .45, .5, '#546e7a', 0, .22, 0, register);
   w.box(.5, .3, .06, '#4fc3f7', 0, .5, .2, register);
   // עגלת קניות
-  const cart = w.group(-1.4, 0, 2.4);
+  const cart = w.group(-1.2, 0, 2.4);
   w.box(.9, .5, .6, '#ef5350', 0, .75, 0, cart);
   w.box(.8, .06, .5, '#c62828', 0, .5, 0, cart);
   [[-.35, -.22], [.35, -.22], [-.35, .22], [.35, .22]].forEach(p => w.cyl(.09, .09, .06, '#455a64', p[0], .35, p[1], cart));
   const cartHandle = w.cyl(.04, .04, .7, '#78909c', -.5, 1.0, 0, cart); cartHandle.rotation.z = .5;
   // שקית
-  const bag = w.group(1.4, 0, 2.4);
+  const bag = w.group(1.15, 0, 2.4);
   w.box(.55, .6, .4, '#c98d4b', 0, .3, 0, bag);
   w.box(.5, .08, .35, '#8d5a2b', 0, .62, 0, bag);
   // הלקוחה — דמות מסתובבת בין ביקורים (צבע משתנה)
@@ -62,7 +62,7 @@ function startShop3D(root) {
       cheese: () => { const c = w.box(.3, .1, .3, '#ffca28', 0, .05, 0, g); c.rotation.y = .6 },
       egg: () => w.ball(.15, '#fff8e1', 0, .16, 0, g, 1, 1.38, 1),
       banana: () => { const b = w.ball(.09, '#ffeb3b', 0, .1, 0, g, 2.6, 1, 1); b.rotation.z = .5 },
-      strawberry: () => { w.ball(.14, '#e53935', 0, .14, 0, g, 1, 1.1, 1); w.ball(.05, '#43a047', 0, .29, 0, g, 1, .4, 1) },
+      strawberry: () => { w.ball(.11, '#d81b60', 0, .13, 0, g, .9, 1.3, .9); w.ball(.05, '#43a047', 0, .28, 0, g, 1.4, .5, 1.4) }, // טיפה מאורכת + כובע — לא כדור כמו עגבנייה
       apple: () => { w.ball(.16, '#e53935', 0, .16, 0, g); w.cyl(.015, .015, .1, '#6d4c41', 0, .34, 0, g) },
       orange: () => w.ball(.15, '#fb8c00', 0, .15, 0, g),
       milk: () => { w.box(.2, .36, .2, '#eceff1', 0, .18, 0, g); w.box(.2, .09, .2, '#4fc3f7', 0, .4, 0, g) },
@@ -114,8 +114,8 @@ function startShop3D(root) {
   let stage = 0;
   w.progressInit(4);
   const CAMS = [ // נכתב לדסקטופ; הנייד מקבל ריווח אוטומטי (כלל 15)
-    { p: [-0.7, 2.7, 6.6], l: [-0.7, 1.2, -1.2] },  // find: מדפים+עגלה (העגלה בשמאל)
-    { p: [-0.3, 3.0, 10.1], l: [-0.3, 1.0, 0.4] },   // shelfsort: מקרר(-2.2) עד מדף ירוק(1.6) — רוחב מלא גם בנייד
+    { p: [-0.6, 2.3, 6.0], l: [-0.6, 1.3, -1.2] },  // find: מדפים+עגלה — קרוב ונמוך
+    { p: [-0.2, 2.3, 8.2], l: [-0.2, 1.2, 0.5] },   // shelfsort: מקרר(-1.55) עד מדף ירוק(1.2) — קרוב, בלי רצפה ריקה
     { p: [0.65, 2.6, 6.9], l: [0.65, 1.0, 1.6] },   // count: שקית(1.4)+פריטים
     { p: [0.5, 2.9, 7.0], l: [0.6, 0.9, 0.2] },  // pay: קופה+ערימת מטבעות בפריים
     { p: [0, 2.5, 6.4], l: [0, 1.3, 0] }      // done
@@ -207,7 +207,7 @@ function startShop3D(root) {
     const bake = withBakery ? shuffled(GOODS.filter(g => g.cat === 'bakery')).slice(0, 2) : [];
     const items = shuffled(veg.concat(cool, bake));
     // מדף ירוק (ימין) + מקרר (שמאל) + מדף מאפייה חום (אמצע, מרמה 2) כמטרות
-    const shelfGreen = w.group(1.6, 0, 1.4); stageObjs.push(shelfGreen);
+    const shelfGreen = w.group(1.2, 0, 1.4); stageObjs.push(shelfGreen);
     w.box(1.3, .08, .7, '#43a047', 0, .95, 0, shelfGreen);
     w.box(.12, .95, .7, '#2e7d32', -.6, .48, 0, shelfGreen); w.box(.12, .95, .7, '#2e7d32', .6, .48, 0, shelfGreen);
     const shelfBakery = w.group(0, 0, 1.4);
