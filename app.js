@@ -7,22 +7,19 @@ function saveState(){try{const prev=JSON.parse(localStorage.getItem(LS_KEY));
  localStorage.setItem(LS_KEY,JSON.stringify(prev&&typeof prev==='object'&&!Array.isArray(prev)?Object.assign({},prev,STATE):STATE))}catch(e){}}
 loadState();
 
-// --- גשר תלת-ממד → התקדמות קלאסית (בעלות: משולב ראשי; world3d.js בבעלות ה-fixer) ---
-// ביקור תלת-ממדי שהושלם = לקוח אחד שהושלם ברמה הנוכחית של התפקיד. שומר על מבנה
-// ה-90 פעילויות: לא מדלג על רמות, צובר לאותה תג/פתיחה כמו משחק דו-ממדי.
-function bridge3DAward(roleId){
- const role=ROLES.find(r=>r.id===roleId);if(!role)return null;
- const NL=role.levels.length,lvl=Math.min(STATE.unlocked[roleId]||1,NL);
- STATE.done[roleId]=STATE.done[roleId]||{};STATE.done[roleId][lvl]=STATE.done[roleId][lvl]||{};
- const arr=role.levels[lvl-1];const ci=arr.findIndex((_,i)=>!STATE.done[roleId][lvl][i]);
- if(ci<0){saveState();return {lvl,already:true}}
- STATE.done[roleId][lvl][ci]='3d'; // שיוך גלוי: הושלם בביקור תלת-ממדי, לא במשחק קלאסי
- const lvlDone=arr.every((_,i)=>STATE.done[roleId][lvl][i]);
- let newBadge=false,newLevel=false;
- if(lvlDone&&!(STATE.badges[roleId]||[])[lvl-1]){STATE.badges[roleId]=STATE.badges[roleId]||[];STATE.badges[roleId][lvl-1]=true;newBadge=true;
-  if(lvl<NL){STATE.unlocked[roleId]=Math.max(STATE.unlocked[roleId]||1,lvl+1);newLevel=true;STATE.fresh[roleId]=lvl+1}else STATE.unlocked[roleId]=NL}
- saveState();return {lvl,newBadge,newLevel,badge:role.badge}}
-window.bridge3DAward=bridge3DAward;
+// --- מסלול תלת-ממד נפרד (החלטת מורה 7.11): ביקורים פותחים רמות תלת-ממד חדשות בלבד ---
+// לא נוגע ב-done/badges/unlocked הקלאסיים. מבנה: STATE[role+'3d']={visits,stars,lvl}
+window.prog3d={
+ get(role){const p=(typeof STATE!=='undefined'&&STATE[role+'3d'])||null;return p?{visits:p.visits||0,stars:p.stars||0,lvl:p.lvl||1}:{visits:0,stars:0,lvl:1}},
+ completeVisit(role){
+  const key=role+'3d';const p=window.prog3d.get(role);
+  p.visits++;p.stars++;
+  const NL=(ROLES.find(r=>r.id===role)||{levels:[1]}).levels.length;
+  let newLevel=false;
+  if(p.lvl<NL){p.lvl++;newLevel=true}
+  STATE[key]={visits:p.visits,stars:p.stars,lvl:p.lvl};saveState();
+  return {visits:p.visits,stars:p.stars,lvl:p.lvl,newLevel}}
+};
 // מיגרציה: אם רמה סוימה לפני שנוספו רמות חדשות, פותחים את הבאה אוטומטית
 function normalizeState(){if(typeof ROLES==='undefined')return;ROLES.forEach(r=>{const NL=r.levels.length;let u=STATE.unlocked[r.id]||1;
  while(u<NL&&(STATE.done[r.id]||{})[u]&&r.levels[u-1].every((_,i)=>STATE.done[r.id][u][i]))u++;
@@ -153,8 +150,7 @@ function roleScreen(role,sc){
  sc.appendChild(el('p','screen-sub',`ברמה ${unl}: עזרת ל-${doneCount} מתוך ${role.levels[unl-1].length} דמויות`));
  const chars=el('div','char-row');
  role.levels[unl-1].forEach((ch,i)=>{const d=done[i];
-  const mark=d?`<span class="done-mark">✔️</span>${d==='3d'?'<span class="done-3d">3D</span>':''}`:'';
-  const b=el('button','char-card',`${mark}<div class="ce">${ch.c[0]}</div><div class="cn">${ch.c[1]}</div>`);
+  const b=el('button','char-card',`${d?'<span class="done-mark">✔️</span>':''}<div class="ce">${ch.c[0]}</div><div class="cn">${ch.c[1]}</div>`);
   b.onclick=()=>{sfx('tick');runVisit(role,unl,i)};chars.appendChild(b)});
  sc.appendChild(chars);
 }

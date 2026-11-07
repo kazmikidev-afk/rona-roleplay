@@ -7,7 +7,7 @@ function startShop3D(root) {
   const { THREE, scene } = w;
   const P = W3D_PALETTE;
 
-  const lvl = Math.min(4, (typeof STATE !== 'undefined' && STATE.unlocked && STATE.unlocked.shop) || 1);
+  const lvl = Math.min(4, (typeof prog3d !== 'undefined' ? prog3d.get('shop').lvl : 1)); // רמת תלת-ממד נפרדת מהקלאסי
   const eff = Math.min(3, lvl); // עוצמת תוכן מדרגת 1-3; רמה 4 מוסיפה bigchange
   const prog = w.getProgress('shop3d') || { visits: 0, stars: 0 };
 
@@ -42,7 +42,7 @@ function startShop3D(root) {
   // הלקוחה — דמות מסתובבת בין ביקורים (צבע משתנה)
   const CUST_COLORS = ['#b57edc', '#f4a460', '#90caf9', '#a5d6a7', '#f48fb1', '#ffe082'];
   const custColor = CUST_COLORS[prog.visits % CUST_COLORS.length];
-  const cust = w.group(2.5, 0, -.2); // גוף הלקוחה נחתך בנייד גם כשהטבעת בפריים
+  const cust = w.group(2.3, 0, -.2); // גוף הלקוחה נחתך בנייד גם כשהטבעת בפריים
   w.ball(.55, custColor, 0, .95, 0, cust, 1, 1.15, 1);
   w.ball(.42, custColor, 0, 1.85, 0, cust);
   w.ball(.13, custColor, -.3, 2.2, 0, cust); w.ball(.13, custColor, .3, 2.2, 0, cust);
@@ -85,6 +85,27 @@ function startShop3D(root) {
     { k: 'fish', n: 'דג', cat: 'cool' },
     { k: 'bread', n: 'לחם', cat: 'bakery' }, { k: 'cookie', n: 'עוגייה', cat: 'bakery' }, { k: 'cake', n: 'עוגה', cat: 'bakery' }
   ];
+
+  // אייקוני SVG לרשימת הקניות החזותית (רונה לא קוראת — הרשימה חייבת להיות בתמונות)
+  const ICONS = {
+    apple: '<circle cx="12" cy="13" r="7.5" fill="#e53935"/><path d="M12 6q0-3 2-4" stroke="#6d4c41" stroke-width="1.4" fill="none"/><ellipse cx="15" cy="4.5" rx="2.4" ry="1.3" fill="#43a047" transform="rotate(-20 15 4.5)"/>',
+    orange: '<circle cx="12" cy="12" r="8" fill="#fb8c00"/><circle cx="12" cy="5.5" r="1.2" fill="#43a047"/>',
+    banana: '<path d="M4 15q3 6 10 4.5T20 10l-2.5-1q-1 5-5.5 6T6.5 12.5Z" fill="#fdd835"/>',
+    strawberry: '<path d="M12 21Q5.5 15.5 6 9.5Q7 5 12 5t6 4.5q.5 6-6 11.5Z" fill="#e53935"/><path d="M8.5 5.5 12 8l3.5-2.5L14 4h-4Z" fill="#43a047"/><circle cx="10" cy="12" r=".7" fill="#ffebee"/><circle cx="14" cy="13" r=".7" fill="#ffebee"/><circle cx="12" cy="16" r=".7" fill="#ffebee"/>',
+    carrot: '<path d="M9 7h6l-3 14Z" fill="#ef6c00"/><path d="M12 7V3M10 7 8 3.5M14 7l2-3.5" stroke="#43a047" stroke-width="1.4"/>',
+    tomato: '<circle cx="12" cy="13" r="7.5" fill="#e53935"/><path d="M12 5.5 13 8l2.5-.8-1.5 2 2 1.4-2.6.2.4 2.6-1.8-1.9-1.8 1.9.4-2.6-2.6-.2 2-1.4-1.5-2 2.5.8Z" fill="#43a047"/>',
+    cucumber: '<rect x="4" y="9" width="16" height="7" rx="3.5" fill="#43a047" transform="rotate(-15 12 12)"/><circle cx="9" cy="11" r=".8" fill="#a5d6a7"/><circle cx="13" cy="12" r=".8" fill="#a5d6a7"/><circle cx="16" cy="10.5" r=".8" fill="#a5d6a7"/>',
+    lettuce: '<circle cx="9" cy="13" r="5" fill="#7cb342"/><circle cx="15" cy="13" r="5" fill="#8bc34a"/><circle cx="12" cy="9.5" r="5" fill="#9ccc65"/>',
+    milk: '<path d="M9 8h6v12H9Z" fill="#eceff1"/><path d="M9 8l1.5-4h3L15 8Z" fill="#90caf9"/><rect x="10.5" y="11" width="3" height="4" rx="1" fill="#90caf9"/>',
+    juice: '<path d="M9 8h6v12H9Z" fill="#ffcc80"/><path d="M9 8l1.5-4h3L15 8Z" fill="#fb8c00"/><path d="M13 8l2-4" stroke="#e53935" stroke-width="1.2"/>',
+    cheese: '<path d="M3 17 21 8v9H3Z" fill="#ffd54f"/><circle cx="14" cy="14" r="1.4" fill="#ffb300"/><circle cx="18" cy="13" r="1" fill="#ffb300"/><circle cx="9" cy="15.5" r="1.1" fill="#ffb300"/>',
+    egg: '<ellipse cx="12" cy="12" rx="5.5" ry="7.5" fill="#fafafa" stroke="#d7ccc8" stroke-width="1"/>',
+    fish: '<ellipse cx="10" cy="12" rx="6" ry="4" fill="#4fc3f7"/><path d="M15.5 12 21 8v8Z" fill="#29b6f6"/><circle cx="7" cy="11" r=".9" fill="#01579b"/>',
+    bread: '<rect x="4" y="9" width="16" height="9" rx="4.5" fill="#a1703a"/><path d="M8 11q1.5 2 0 4M12.5 11q1.5 2 0 4M16.5 11q1 2 0 4" stroke="#6d4c41" stroke-width="1" fill="none"/>',
+    cookie: '<circle cx="12" cy="12" r="8" fill="#8d6e63"/><circle cx="9" cy="10" r="1.3" fill="#4e342e"/><circle cx="14" cy="9" r="1.3" fill="#4e342e"/><circle cx="12" cy="14" r="1.3" fill="#4e342e"/><circle cx="15.5" cy="13.5" r="1" fill="#4e342e"/>',
+    cake: '<path d="M6 20 8 10h8l2 10Z" fill="#f8bbd0"/><rect x="7.4" y="8" width="9.2" height="3" rx="1.5" fill="#fff8e1"/><circle cx="12" cy="6" r="1.6" fill="#e53935"/>'
+  };
+  const stageDom = []; // אלמנטי DOM של שלב — מנוקים בcleanupStage
   const NUM_WORDS = ['אחת', 'שתיים', 'שלוש', 'ארבע', 'חמש', 'שש'];
   const CUST_LINES = ['קניות לחג!', 'רשימה ארוכה יותר הפעם.', 'שוב אני עם העגלה!', 'קונה לכל הלהקה!', 'צריך הרבה גזרים!', 'קניות של לילה!'];
 
@@ -108,6 +129,7 @@ function startShop3D(root) {
   function clearGroup(arr) { arr.forEach(o => { o.parent && o.parent.remove(o) }); arr.length = 0 }
   let stageObjs = [], stageDrags = [], stageTargets = [];
   function cleanupStage() {
+    stageDom.forEach(e => e.remove()); stageDom.length = 0;
     clearGroup(stageObjs);
     stageDrags.forEach(d => { const i = draggables.indexOf(d); if (i >= 0) draggables.splice(i, 1) });
     stageTargets.forEach(t => { if (t.ring) t.ring.visible = false; const i = targets.indexOf(t); if (i >= 0) targets.splice(i, 1) }); // כלל 17: אין טבעות רפאים
@@ -133,6 +155,14 @@ function startShop3D(root) {
     const custLine = CUST_LINES[prog.visits % CUST_LINES.length];
     w.banner('מה ברשימה? גררי לעגלה', null);
     speak(custLine, () => speak('גררי את הפריטים מהרשימה לעגלה'));
+    // רשימת קניות חזותית — אייקונים שמעומעמים כשנאספים (רונה לא קוראת)
+    const listEl = document.createElement('div'); listEl.className = 'shop-list';
+    need.forEach(g => {
+      const chip = document.createElement('div'); chip.className = 'shop-chip'; chip.dataset.k = g.k;
+      chip.innerHTML = '<svg viewBox="0 0 24 24" width="30" height="30">' + ICONS[g.k] + '</svg>';
+      listEl.appendChild(chip);
+    });
+    w.root.appendChild(listEl); stageDom.push(listEl);
     let got = 0;
     const placed = items.map((g, i) => {
       const it = itemModel(g.k, scene); it.scale.setScalar(1.2); stageObjs.push(it);
@@ -151,6 +181,8 @@ function startShop3D(root) {
       onDrop: (d) => {
         if (d.userData.needed) {
           got++; sfx('good'); speak(NUM_WORDS[got - 1] || '' + got);
+          const chip = listEl.querySelector('[data-k="' + d.userData.kind + '"]:not(.got)');
+          if (chip) chip.classList.add('got');
           d.grp.position.set(0, 0, 0); d.grp.scale.setScalar(.01); d.active = false;
           if (got >= need.length) {
             speak('כל הכבוד רונה!');
@@ -303,19 +335,15 @@ function startShop3D(root) {
   }
 
   // ---------- שלב 4: סיום ----------
-  let awardedThisSession = false; // פרס אחד לביקור — אידמפוטנטי מול קריאה כפולה
+  let visitCounted = false; // ספירה אחת לביקור — אידמפוטנטי מול קריאה כפולה
   function stageDone() {
     cleanupStage();
-    const p = w.getProgress('shop3d') || { visits: 0, stars: 0 };
-    if (!awardedThisSession) { p.visits++; p.stars++; w.saveProgress('shop3d', p) }
-    // גשר התקדמות: הביקור נספר כהשלמת לקוח אחד ברמה הנוכחית, עם שיוך '3d' גלוי
-    const aw = (!awardedThisSession && typeof bridge3DAward === 'function') ? bridge3DAward('shop') : null;
-    awardedThisSession = true;
-    const badgeLine = aw && aw.newBadge;
-    w.banner(badgeLine ? 'תג חדש!' : 'כל הכבוד! סיימת!', null);
-    w.endPanel(badgeLine ? 'קיבלת תג מוכרת!' : 'הלקוחה מאושרת! את מוכרת אלופה!', 'שחקי שוב', () => location.reload());
-    if (badgeLine) speak('השלמת את רמה ' + aw.lvl + ' וקיבלת תג מוכרת!', () => { if (aw.newLevel) speak('רמה ' + (aw.lvl + 1) + ' נפתחה!') });
-    else speak('הלקוחה מאושרת! את מוכרת אלופה!');
+    // מסלול תלת-ממד נפרד: ביקור מצטבר, פותח רמת תלת-ממד הבאה (לא נוגע בקלאסי)
+    const r = (!visitCounted && typeof prog3d !== 'undefined') ? prog3d.completeVisit('shop') : null;
+    visitCounted = true;
+    w.banner(r && r.newLevel ? 'רמה ' + r.lvl + ' נפתחה!' : 'כל הכבוד! סיימת!', null);
+    w.endPanel('הלקוחה מאושרת! את מוכרת אלופה!', 'שחקי שוב', () => location.reload());
+    speak('הלקוחה מאושרת! את מוכרת אלופה!', () => { if (r && r.newLevel) speak('רמה ' + r.lvl + ' נפתחה!') });
   }
 
   const ticks = [];
