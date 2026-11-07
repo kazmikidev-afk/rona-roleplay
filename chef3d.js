@@ -12,16 +12,21 @@ function startChef3D(root) {
 
   // ---------- הקראה מקומית: קבצי קול מוכנים בלבד, בלי קול דפדפן, בלי חפיפה ----------
   // טוקן אחד: כל speak חדש מבטל את הקודם כולל ה-callback שלו. חסרה הקלטה -> שקט (לא TTS).
-  // תור: משפטים לא נחתכים באמצע; הוראות מצטברות לפי הסדר. now=true (נגיעה בחפץ/כפתור) מפסיק ומנגן מיד.
-  let spTok = 0, spTimer = null, spQ = [], spPlaying = false;
+  // תור הוראות + משוב מיידי. הוראות (kind 'i') מצטברות בסדר ולא נחתכות על ידי הוראות אחרות.
+  // משוב (kind 'f': נכון/לא נכון/שם פריט/ספירה) הוא תגובה לפעולה של הילדה ולכן מנגן מיד:
+  // מחליף משוב ישן שעדיין ממתין, וקוטע הוראה מתנגנת כדי להחזיר אותה לתור אחריו (לא הולכת לאיבוד).
+  // מעבר שלב מבטל הכול (stopAll) - לא נשאר משוב של שלב קודם.
+  let spTok = 0, spTimer = null, spQ = [], spPlaying = false, spCur = null;
   const spAudio = new Audio();
   try { if ('speechSynthesis' in window) speechSynthesis.cancel() } catch (e) {}
-  function stopAll() { spTok++; spQ = []; spPlaying = false; if (spTimer) { clearTimeout(spTimer); spTimer = null } try { spAudio.pause() } catch (e) {} }
+  function halt() { spTok++; spPlaying = false; if (spTimer) { clearTimeout(spTimer); spTimer = null } try { spAudio.pause() } catch (e) {} }
+  function stopAll() { halt(); spQ = []; spCur = null }
+  window.__chefQ = () => JSON.stringify({q: spQ.map(x => x.t + ':' + x.k), playing: spPlaying});
   function spPump() {
     if (spPlaying || !spQ.length) return;
-    const it = spQ.shift(), my = spTok; spPlaying = true; if (it.start) it.start();
+    const it = spQ.shift(), my = spTok; spPlaying = true; spCur = it; if (it.start) it.start();
     let fin = false;
-    const done = () => { if (fin || my !== spTok) return; fin = true; if (spTimer) { clearTimeout(spTimer); spTimer = null } spPlaying = false; if (it.then) it.then(); spPump() };
+    const done = () => { if (fin || my !== spTok) return; fin = true; if (spTimer) { clearTimeout(spTimer); spTimer = null } spPlaying = false; spCur = null; if (it.then) it.then(); spPump() };
     const src = (typeof VOICE_CLIPS !== 'undefined') && VOICE_CLIPS[it.t];
     if (!src) { window.__chefMissingClip = (window.__chefMissingClip || []).concat(it.t); spTimer = setTimeout(done, 300); return }
     if (typeof STATE !== 'undefined' && STATE.muted) { spTimer = setTimeout(done, 400); return }
@@ -30,10 +35,17 @@ function startChef3D(root) {
     spTimer = setTimeout(done, Math.min(9000, 2500 + it.t.length * 160)); // רשת ביטחון: אין תלות באודיו להתקדמות
     try { const pr = spAudio.play(); if (pr && pr.catch) pr.catch(() => { if (my === spTok) { if (spTimer) clearTimeout(spTimer); spTimer = setTimeout(done, 300) } }) } catch (e) {}
   }
-  function speak(t, then, now, start) {
-    if (now) stopAll();
-    if (spQ.length >= 3) spQ.splice(0, spQ.length - 2); // לא נערמים משפטים ישנים
-    spQ.push({ t, then, start }); spPump();
+  function speak(t, then, now, start) { // הוראה
+    if (now) { fb(t, then, start); return }
+    if (spQ.length >= 4) spQ.splice(0, spQ.length - 3);
+    spQ.push({ t, then, start, k: 'i' }); spPump();
+  }
+  function fb(t, then, start) { // משוב מיידי
+    const keep = spQ.filter(x => x.k === 'i');
+    const cur = spPlaying ? spCur : null;
+    halt();
+    if (cur && cur.k === 'i' && !cur.re) { cur.re = true; keep.unshift(cur) } // הוראה שנקטעה חוזרת אחרי המשוב
+    spQ = [{ t, then, start, k: 'f' }].concat(keep); spCur = null; spPump();
   }
   // כפתור הרמקול בבאנר מנגן דרך אותו מנוע
   function banner(text, say) {
@@ -203,7 +215,7 @@ function startChef3D(root) {
       w.cyl(.26, .2, .05, '#ffffff', 0, 0, 0, plate);
       vegModel(d.id, plate);
       const dr = w.makeDraggable(plate, {
-        proxyR: .34, onPick: () => speak(d.name, null, true)
+        proxyR: .34, onPick: () => fb(d.name)
       });
       stageDrags.push(dr);
     });
@@ -214,10 +226,10 @@ function startChef3D(root) {
         const idx = stageDrags.indexOf(d);
         if (freestyle && DISHES[idx]) dish = DISHES[idx]; // בחירה חופשית — כל מנה מתקבלת
         if (DISHES[idx] && DISHES[idx].id === dish.id) {
-          sfx('good'); speak('יופי! בחרת נכון'); d.grp.visible = false;
+          sfx('good'); fb('יופי! בחרת נכון'); d.grp.visible = false;
           w.progressStep(); setTimeout(() => setStage(1), 1600);
         } else {
-          sfx('oops'); speak('הלקוחה ביקשה מנה אחרת. נסי שוב!');
+          sfx('oops'); fb('הלקוחה ביקשה מנה אחרת. נסי שוב!');
           d.grp.position.copy(d.home);
         }
       }
@@ -245,7 +257,7 @@ function startChef3D(root) {
       const needed = need.includes(k);
       const dr = w.makeDraggable(it, {
         proxyR: .3, onPick: () => sfx('tick'),
-        onMiss: needed ? null : () => speak('זה לא במתכון. נסי שוב!')
+        onMiss: needed ? null : () => fb('זה לא במתכון. נסי שוב!')
       });
       dr.userData = { kind: k, needed };
       stageDrags.push(dr);
@@ -255,10 +267,10 @@ function startChef3D(root) {
       ringRot: { x: Math.PI / 2 },
       onDrop: (d) => {
         if (d.userData.needed) {
-          got++; counterSet(got); sfx('good'); speak('' + got);
+          got++; counterSet(got); sfx('good'); fb('' + got);
           d.grp.position.set(0, 0, 0); d.grp.scale.setScalar(.01); d.active = false;
         } else {
-          sfx('oops'); speak('זה לא במתכון. נסי שוב!'); d.grp.position.copy(d.home);
+          sfx('oops'); fb('זה לא במתכון. נסי שוב!'); d.grp.position.copy(d.home);
         }
       }
     });
@@ -267,7 +279,7 @@ function startChef3D(root) {
     const wait = setInterval(() => {
       if (got >= need.length) {
         clearInterval(wait);
-        speak('כל המרכיבים בסל! יפה מאוד!');
+        fb('כל המרכיבים בסל! יפה מאוד!');
         w.progressStep(); setTimeout(() => setStage(2), 1600);
       }
     }, 300);
@@ -288,10 +300,10 @@ function startChef3D(root) {
         needed: 260, radiusPx: 90,
         onProgress: (p) => { it.scale.setScalar(1 - p * .4); it.rotation.y += .1; sfx('tick') },
         onDone: () => {
-          chopped++; counterSet(chopped); sfx('good'); speak('' + chopped);
+          chopped++; counterSet(chopped); sfx('good'); fb('' + chopped);
           it.visible = false;
           if (chopped >= items.length) {
-            speak('יופי! בחרת נכון'); // generic praise exists; use exact existing clip
+            fb('יופי! בחרת נכון'); // generic praise exists; use exact existing clip
             w.progressStep(); setTimeout(() => setStage(3), 1400);
           }
         }
@@ -317,7 +329,7 @@ function startChef3D(root) {
       { obj: stove, say: 'אופים או מבשלים' },
       { obj: plating, say: 'קשטי את הצלחת והגישי בחיוך' }];
     let step = 0;
-    setTimeout(() => speak(order[0].say), 2200);
+    const stg0 = stage; setTimeout(() => { if (stage === stg0 && step === 0) speak(order[0].say) }, 2200);
     const tgts = order.map((o, i) => {
       const t = w.addDropTarget(o.obj, {
         radiusPx: 160, ringR: .5, ringPos: new THREE.Vector3(0, .5, 0), ringRot: { x: Math.PI / 2 },
@@ -328,11 +340,11 @@ function startChef3D(root) {
             t.ring.material.color.set(P.ringOk);
             if (step < order.length) speak(order[step].say);
             else {
-              speak('יופי! בחרת נכון');
+              fb('יופי! בחרת נכון');
               w.progressStep(); setTimeout(() => setStage(4), 1400);
             }
           } else {
-            sfx('oops'); speak('מה בא קודם?'); d.grp.position.copy(d.home);
+            sfx('oops'); fb('מה בא קודם?'); d.grp.position.copy(d.home);
           }
         }
       });
@@ -351,7 +363,7 @@ function startChef3D(root) {
     const plate = w.group(.6, .95, 2.1); stageObjs.push(plate);
     w.cyl(.34, .26, .06, '#ffffff', 0, .03, 0, plate);
     vegModel(dish.id, plate);
-    const dr = w.makeDraggable(plate, { proxyR: .4, onPick: () => sfx('tick'), onMiss: () => speak('הלקוחה מחכה ליד השולחן!') });
+    const dr = w.makeDraggable(plate, { proxyR: .4, onPick: () => sfx('tick'), onMiss: () => fb('הלקוחה מחכה ליד השולחן!') });
     stageDrags.push(dr);
     const tgt = w.addDropTarget(tableG, {
       radiusPx: 170, ringR: .85, ringPos: new THREE.Vector3(0, .95, 0), ringRot: { x: Math.PI / 2 },
@@ -360,7 +372,7 @@ function startChef3D(root) {
         if (typeof confettiBurst === 'function') confettiBurst();
         // שמחת הלקוחה
         w.onTick((t) => { cust.position.y = Math.abs(Math.sin(t * 6)) * .18 });
-        speak('הלקוחה מאושרת! את שפית אלופה!');
+        fb('הלקוחה מאושרת! את שפית אלופה!');
         w.progressStep(); setTimeout(() => setStage(5), 2000);
       }
     });
@@ -397,7 +409,7 @@ function startChef3D(root) {
     items.forEach((s, i) => {
       const col = i % 4, row = Math.floor(i / 4); // שורה שנייה ברמות גבוהות — שלא ייצאו מהמסך
       const it = vegModel(s.k, scene); it.position.set((col - 1.5) * .62, .95, 1.5 - row * .5); it.scale.setScalar(1.25); stageObjs.push(it); // מוגדל — קריא בנייד
-      const dr = w.makeDraggable(it, { proxyR: .28, onPick: () => { sfx('tick'); speak(s.n, null, true) }, onMiss: () => speak('זה לא המקום. נסי סל אחר') }); // אמירת שם הפריט — זיהוי לילדה שלא קוראת
+      const dr = w.makeDraggable(it, { proxyR: .28, onPick: () => { sfx('tick'); fb(s.n) }, onMiss: () => fb('זה לא המקום. נסי סל אחר') }); // אמירת שם הפריט — זיהוי לילדה שלא קוראת
       dr.userData = { good: s.good };
       stageDrags.push(dr);
     });
@@ -407,13 +419,13 @@ function startChef3D(root) {
         accepts: () => true,
         onDrop: (d) => {
           if (d.userData.good === isGood) {
-            left--; counterSet(items.length - left); sfx('good'); speak('נכון!');
+            left--; counterSet(items.length - left); sfx('good'); fb('נכון!');
             d.grp.position.set(0, 0, 0); d.grp.scale.setScalar(.01); d.active = false;
             if (left <= 0) {
-              speak('מיון יפה! אוכל של כל יום נותן כוח');
+              fb('מיון יפה! אוכל של כל יום נותן כוח');
               w.progressStep(); setTimeout(() => setStage(6), 1600);
             }
-          } else { sfx('oops'); speak('זה לא המקום. נסי סל אחר'); d.grp.position.copy(d.home) }
+          } else { sfx('oops'); fb('זה לא המקום. נסי סל אחר'); d.grp.position.copy(d.home) }
         }
       });
       stageTargets.push(t);
@@ -435,7 +447,7 @@ function startChef3D(root) {
       freestyle = lvl >= 2 && (pr.visits % 2 === 1);
       w.progressInit(6); setStage(0);
     });
-    speak('הלקוחה מאושרת! את שפית אלופה!');
+    fb('הלקוחה מאושרת! את שפית אלופה!');
   }
 
   const ticks = [];
