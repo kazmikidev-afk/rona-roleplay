@@ -94,8 +94,8 @@ function startChef3D(root) {
   ];
   const DECOYS = ['orange', 'egg', 'cookie', 'corn', 'apple', 'cucumber'];
   const SORT_POOL = [
-    { k: 'apple', good: true }, { k: 'carrot', good: true }, { k: 'milk', good: true }, { k: 'egg', good: true },
-    { k: 'candy', good: false }, { k: 'cookie', good: false }, { k: 'fries', good: false }, { k: 'cake', good: false }];
+    { k: 'apple', good: true, n: 'תפוח' }, { k: 'carrot', good: true, n: 'גזר' }, { k: 'milk', good: true, n: 'חלב' }, { k: 'egg', good: true, n: 'ביצה' },
+    { k: 'candy', good: false, n: 'ממתק' }, { k: 'cookie', good: false, n: 'עוגייה' }, { k: 'fries', good: false, n: "צ'יפס" }, { k: 'cake', good: false, n: 'עוגה' }];
 
   // ---------- ניהול שלבים ----------
   const STAGES = ['recipe', 'gather', 'chop', 'steps', 'serve', 'sort', 'done'];
@@ -317,15 +317,15 @@ function startChef3D(root) {
     const items = [];
     for (let i = 0; i < n / 2; i++) { items.push(goods[i % goods.length]); items.push(bads[i % bads.length]) }
     items.sort(() => Math.random() - .5);
-    const binG = w.group(-1.15, 0, 2.1), binB = w.group(1.15, 0, 2.1); // בתוך פריים הנייד
+    const binG = w.group(-.95, 0, 2.1), binB = w.group(.95, 0, 2.1); // בתוך פריים הנייד
     stageObjs.push(binG, binB);
     w.cyl(.45, .35, .5, '#43a047', 0, .95, 0, binG);
     w.cyl(.45, .35, .5, '#ef6c00', 0, .95, 0, binB);
     let left = items.length;
     items.forEach((s, i) => {
       const col = i % 5, row = Math.floor(i / 5); // שורה שנייה ברמות גבוהות — שלא ייצאו מהמסך
-      const it = vegModel(s.k, scene); it.position.set(-1.2 + col * .6, .95, 2.75 - row * .4); stageObjs.push(it);
-      const dr = w.makeDraggable(it, { proxyR: .28, onPick: () => sfx('tick'), onMiss: () => speak('זה לא המקום. נסי סל אחר') });
+      const it = vegModel(s.k, scene); it.position.set(-1.05 + col * .6, .95, 2.75 - row * .4); stageObjs.push(it);
+      const dr = w.makeDraggable(it, { proxyR: .28, onPick: () => { sfx('tick'); speak(s.n) }, onMiss: () => speak('זה לא המקום. נסי סל אחר') }); // אמירת שם הפריט — זיהוי לילדה שלא קוראת
       dr.userData = { good: s.good };
       stageDrags.push(dr);
     });

@@ -43,7 +43,7 @@ function speak(t,then){const go=then?once(then):null;stopSpeak();
   const kick=()=>{if(!tm)tm=setTimeout(fin,Math.min(12000,1600+s.length*200))};
   a.src=src;
   let pr=null;try{pr=a.play()}catch(e){}
-  if(pr&&pr.then){pr.then(kick);pr.catch(err=>{if(tm){clearTimeout(tm);tm=null}
+  if(pr&&pr.then){pr.then(kick).catch(err=>{if(tm){clearTimeout(tm);tm=null}
    // חסימת autoplay לפני המגע הראשון (ברכת הפתיחה): מדלגים על המשפט והזרימה ממשיכה -
    // כך שהחסימה הראשונה לא תקועה ולא מונעת את ההוראות שיבואו אחרי המקש הראשון
    if(err&&err.name==='NotAllowedError')nxt();else ttsSay(s,nxt)})}
