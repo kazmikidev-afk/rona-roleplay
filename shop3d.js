@@ -191,7 +191,8 @@ function startShop3D(root) {
       stageDrags.push(dr);
       return it;
     });
-    shelfRow(placed, .5, 2.6);
+    // שורה אחת של 5 + גלילה לשורה מתחת הרצפה = פריט מחוץ למסך (תקלה אמיתית ברמה 4 עם 6 פריטים)
+    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set((col - 1) * .85, .5 + row * .7, 2.6) });
     let left = items.length;
     const catTargets = [[shelfGreen, 'veg'], [fridgeG, 'cool']];
     if (withBakery) catTargets.push([shelfBakery, 'bakery']);
@@ -318,7 +319,7 @@ function startShop3D(root) {
   const pump = () => { ticks.forEach(fn => fn((performance.now()) / 1000)) };
   origOnTick(pump);
 
-  setStage(0);
+  setStage(+(new URLSearchParams(location.search).get('shopstage') || 0)); // פרמטר dev לבדיקות e2e
   w.getStage = () => stage;
   w.STAGES = STAGES;
   return w.dispose.bind(w);
