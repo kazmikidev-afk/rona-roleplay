@@ -99,7 +99,7 @@ function homeScreen(sc){
  const badges=el('button','pill-btn','🏅 התגים שלי');badges.onclick=()=>{sfx('tick');show(badgesScreen,'התגים שלי')};foot.appendChild(badges);
  const inst=el('button','pill-btn primary','📱 הוסף לדף הבית');inst.onclick=installClick;foot.appendChild(inst);
  sc.appendChild(foot);
- sc.appendChild(el('div','footer-note','עובד גם בלי אינטרנט · ההתקדמות נשמרת במכשיר'));
+ sc.appendChild(el('div','footer-note','המשחק עובד גם בלי אינטרנט · הקראה נשמרת במכשיר אחרי שמנגנים אותה פעם ראשונה · ההתקדמות נשמרת במכשיר'));
 }
 
 // --- מסך תפקיד: רמות + דמויות ---
