@@ -295,11 +295,11 @@ function engineType(t){return({toolpick:'pick',feed:'pick',brush:'scrub',furscru
 
 // --- ביקור תלת-ממדי אצל הוטרינרית ---
 function openVet3D(){
- show(sc=>{const wrap=el('div','vet3d-wrap');sc.appendChild(wrap);startVet3DInto(wrap)},'מרפאת החיות ✨');
+ show(sc=>{const wrap=el('div','vet3d-wrap');sc.appendChild(wrap);startVet3DInto(wrap)},'מרפאת החיות בתלת-ממד');
 }
 
 function openChef3D(){
- show(sc=>{const wrap=el('div','vet3d-wrap');sc.appendChild(wrap);window.__scene3dCleanup=startChef3D(wrap)},'המטבח התלת-ממדי ✨');
+ show(sc=>{const wrap=el('div','vet3d-wrap');sc.appendChild(wrap);window.__scene3dCleanup=startChef3D(wrap)},'המטבח התלת-ממדי');
 }
 
 function openShop3D(){
