@@ -20,29 +20,29 @@ function startShop3D(root) {
   w.box(.15, 2.1, .9, '#6d4c41', -3.2, 1.05, -3.3);
   w.box(.15, 2.1, .9, '#6d4c41', 3.2, 1.05, -3.3);
   // מקרר (למוצרי חלב/משקאות)
-  const fridgeG = w.group(-1.55, 0, 1.2);
+  const fridgeG = w.group(-1.22, 0, 1.2);
   w.box(1.5, 2.2, 1, '#e3f2fd', 0, 1.1, 0, fridgeG);
   w.box(1.54, .05, 1.04, '#b0bec5', 0, 1.15, 0, fridgeG);
   // דלפק קופה + קופה
   w.box(2.2, .85, 1, '#a1887f', 2.1, .42, -1.6);
   w.box(2.3, .1, 1.1, '#fdf6ee', 2.1, .9, -1.6);
-  const register = w.group(2.1, .95, -1.6);
+  const register = w.group(1.55, .95, -1.6);
   w.box(.7, .45, .5, '#546e7a', 0, .22, 0, register);
   w.box(.5, .3, .06, '#4fc3f7', 0, .5, .2, register);
   // עגלת קניות
-  const cart = w.group(-1.2, 0, 2.4);
+  const cart = w.group(-0.95, 0, 2.05);
   w.box(.9, .5, .6, '#ef5350', 0, .75, 0, cart);
   w.box(.8, .06, .5, '#c62828', 0, .5, 0, cart);
   [[-.35, -.22], [.35, -.22], [-.35, .22], [.35, .22]].forEach(p => w.cyl(.09, .09, .06, '#455a64', p[0], .35, p[1], cart));
   const cartHandle = w.cyl(.04, .04, .7, '#78909c', -.5, 1.0, 0, cart); cartHandle.rotation.z = .5;
   // שקית
-  const bag = w.group(1.15, 0, 2.4);
+  const bag = w.group(0.98, 0, 2.05);
   w.box(.55, .6, .4, '#c98d4b', 0, .3, 0, bag);
   w.box(.5, .08, .35, '#8d5a2b', 0, .62, 0, bag);
   // הלקוחה — דמות מסתובבת בין ביקורים (צבע משתנה)
   const CUST_COLORS = ['#b57edc', '#f4a460', '#90caf9', '#a5d6a7', '#f48fb1', '#ffe082'];
   const custColor = CUST_COLORS[prog.visits % CUST_COLORS.length];
-  const cust = w.group(2.3, 0, -.2); // גוף הלקוחה נחתך בנייד גם כשהטבעת בפריים
+  const cust = w.group(1.55, 0, -.9); // גוף הלקוחה נחתך בנייד גם כשהטבעת בפריים
   w.ball(.55, custColor, 0, .95, 0, cust, 1, 1.15, 1);
   w.ball(.42, custColor, 0, 1.85, 0, cust);
   w.ball(.13, custColor, -.3, 2.2, 0, cust); w.ball(.13, custColor, .3, 2.2, 0, cust);
@@ -114,9 +114,9 @@ function startShop3D(root) {
   let stage = 0;
   w.progressInit(4);
   const CAMS = [ // נכתב לדסקטופ; הנייד מקבל ריווח אוטומטי (כלל 15)
-    { p: [-0.6, 2.3, 6.0], l: [-0.6, 1.3, -1.2] },  // find: מדפים+עגלה — קרוב ונמוך
+    { p: [-0.35, 2.3, 6.0], l: [-0.35, 1.3, -1.2] },  // find: מדפים+עגלה — קרוב ונמוך
     { p: [-0.2, 2.3, 8.2], l: [-0.2, 1.2, 0.5] },   // shelfsort: מקרר(-1.55) עד מדף ירוק(1.2) — קרוב, בלי רצפה ריקה
-    { p: [0.65, 2.6, 6.9], l: [0.65, 1.0, 1.6] },   // count: שקית(1.4)+פריטים
+    { p: [0.65, 2.3, 6.4], l: [0.65, 0.85, 1.6] },   // count: שקית+פריטים, מילוי פריים תחתון
     { p: [0.5, 2.9, 7.0], l: [0.6, 0.9, 0.2] },  // pay: קופה+ערימת מטבעות בפריים
     { p: [0, 2.5, 6.4], l: [0, 1.3, 0] }      // done
   ];
@@ -224,7 +224,7 @@ function startShop3D(root) {
       return it;
     });
     // שורה אחת של 5 + גלילה לשורה מתחת הרצפה = פריט מחוץ למסך (תקלה אמיתית ברמה 4 עם 6 פריטים)
-    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set((col - 1) * .85, .5 + row * .7, 2.6) });
+    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set((col - 1) * .85, .5 + row * .7, 2.2) });
     let left = items.length;
     const catTargets = [[shelfGreen, 'veg'], [fridgeG, 'cool']];
     if (withBakery) catTargets.push([shelfBakery, 'bakery']);
@@ -262,7 +262,7 @@ function startShop3D(root) {
       stageDrags.push(dr);
       return it;
     });
-    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set(.3 + (col - 1) * .8, .55 + row * .7, 2.5) }); // שתי שורות גלויות, מיושר לשקית
+    placed.forEach((g, i) => { const col = i % 3, row = Math.floor(i / 3); g.position.set(.3 + (col - 1) * .8, .55 + row * .7, 2.15) }); // שתי שורות גלויות, מיושר לשקית
     let got = 0;
     const tgt = w.addDropTarget(bag, {
       radiusPx: 150, ringR: .5, ringPos: new THREE.Vector3(0, .75, 0), ringRot: { x: Math.PI / 2 },
