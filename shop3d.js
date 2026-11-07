@@ -137,12 +137,12 @@ function startShop3D(root) {
   }
   const draggables = w._drags, targets = w._tgts;
   function shuffled(a) { return a.slice().sort(() => Math.random() - .5) }
-  // פיזור פריטים על המדף התחתון — מרווח מהקצוות (כלל 14)
+  // פיזור פריטים על המדף התחתון — מרווח מהקצוות (כלל 14), היסט שמאלה מהלקוחה (אין הסתרה של פריט נדרש)
   function shelfRow(items, y, z, parent) {
     const maxC = Math.min(items.length, 5);
     items.forEach((g, i) => {
       const col = i % 5, row = Math.floor(i / 5);
-      g.position.set((col - (maxC - 1) / 2) * .62, y - row * .62, z);
+      g.position.set((col - (maxC - 1) / 2) * .62 - (row ? 0 : .32), y - row * .62, z);
     });
   }
 
