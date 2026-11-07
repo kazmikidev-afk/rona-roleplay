@@ -220,6 +220,19 @@ function startWorld3D(root, opts) {
     }
   });
 
+  // ביטול מגע (מחוות מערכת/התראה/קצה מסך): אין pointerup, אז משחררים בלי יעד וללא קבלה - החפץ חוזר הביתה
+  addEventListener('pointercancel', () => {
+    rubs.forEach(r => { r.down = false; r.last = null });
+    if (!dragCur) return;
+    const d = dragCur; dragCur = null; d.dragging = false;
+    const h = d.home, g = d.grp, t0 = performance.now();
+    (function back() {
+      const k = Math.min(1, (performance.now() - t0) / 350);
+      g.position.lerp(h, .35);
+      if (k < 1 && g.position.distanceTo(h) > .02) requestAnimationFrame(back); else g.position.copy(h);
+    })();
+  });
+
   // --- ליטוף ---
   const rubs = [];
   function registerRub(obj, o) {
