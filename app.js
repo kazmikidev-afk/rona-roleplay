@@ -17,11 +17,14 @@ if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pick
 // הקראה: מנגנים קובץ קול מוכן מראש (voice-manifest.js), וכך ההוראות נשמעות בכל מכשיר -
 // גם כשלדפדפן אין קול עברי מובנה. אם חסרה הקלטה, נופלים חזרה לקול הדפדפן.
 // then מופעל כשהמשפט (או רצף המשפטים) נגמר, או אחרי זמן בטיחות, כדי שהמעבר למסך הבא לא יקטע את המשפט באמצע
-let curAudio=null;
+// נגן אחד משותף: אחרי שהמקש הראשון של הילדה פותח את הניגון, גם קטעים רצופים
+// (שמגיעים בלי מגע נוסף, למשל שורת תג + "רמה נפתחה") ממשיכים להתנגן באותו נגן
+let player=null;
 function stopSpeak(){if('speechSynthesis' in window)try{speechSynthesis.cancel()}catch(e){}
- if(curAudio){const a=curAudio;curAudio=null;try{a.pause()}catch(e){}}}
+ if(player){try{player.pause()}catch(e){}}}
 function ttsSay(t,go){if(!('speechSynthesis' in window)){if(go)setTimeout(go,500);return}
- try{const u=new SpeechSynthesisUtterance(t);u.lang='he-IL';if(heVoice)u.voice=heVoice;u.rate=.95;u.pitch=1.05;
+ try{speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(t);u.lang='he-IL';if(heVoice)u.voice=heVoice;u.rate=.95;u.pitch=1.05;
  if(go){u.onend=go;u.onerror=go;setTimeout(go,Math.min(9000,1400+t.length*170))}
  speechSynthesis.speak(u)}catch(e){if(go)go()}}
 function speak(t,then){const go=then?once(then):null;stopSpeak();
@@ -30,13 +33,18 @@ function speak(t,then){const go=then?once(then):null;stopSpeak();
  const playAt=i=>{if(i>=segs.length){if(go)go();return}
   const s=segs[i],nxt=once(()=>playAt(i+1)),src=(typeof VOICE_CLIPS!=='undefined')&&VOICE_CLIPS[s];
   if(!src){ttsSay(s,nxt);return}
-  const a=new Audio(src);curAudio=a;let tm=null;
-  const fin=()=>{if(tm){clearTimeout(tm);tm=null}if(curAudio===a)curAudio=null;nxt()};
+  if(!player)player=new Audio();
+  const a=player;let tm=null;
+  const fin=()=>{if(tm){clearTimeout(tm);tm=null};nxt()};
   a.onended=fin;
-  a.onerror=()=>{if(tm){clearTimeout(tm);tm=null}if(curAudio===a)curAudio=null;ttsSay(s,nxt)};
+  a.onerror=()=>{if(tm){clearTimeout(tm);tm=null};ttsSay(s,nxt)};
   const kick=()=>{if(!tm)tm=setTimeout(fin,Math.min(12000,1600+s.length*200))};
-  const pr=a.play();
-  if(pr&&pr.then){pr.then(kick);pr.catch(()=>{if(tm){clearTimeout(tm);tm=null}if(curAudio===a)curAudio=null;ttsSay(s,nxt)})}
+  a.src=src;
+  let pr=null;try{pr=a.play()}catch(e){}
+  if(pr&&pr.then){pr.then(kick);pr.catch(err=>{if(tm){clearTimeout(tm);tm=null}
+   // חסימת autoplay לפני המגע הראשון (ברכת הפתיחה): מדלגים על המשפט והזרימה ממשיכה -
+   // כך שהחסימה הראשונה לא תקועה ולא מונעת את ההוראות שיבואו אחרי המקש הראשון
+   if(err&&err.name==='NotAllowedError')nxt();else ttsSay(s,nxt)})}
   else kick()};
  playAt(0)}
 // רמז לילדה: גם בקול וגם על המסך (למקרה שאין קול עברי במכשיר)
