@@ -30,7 +30,7 @@ function startDentist3D(root) {
   const lamp = w.group(-1.9, 0, -0.9);
   w.cyl(.06, .08, 2.6, '#78909c', 0, 1.3, 0, lamp);
   const lampArm = w.cyl(.05, .05, 1.1, '#78909c', .45, 2.55, 0, lamp); lampArm.rotation.z = 1.1;
-  const lampHead = w.ball(.22, '#fff9c4', .9, 2.7, 0, lamp, 1.3, .8, 1.3); lampHead.material.emissive = new THREE.Color('#fff3a0'); lampHead.material.emissiveIntensity = .5;
+  const lampHead = w.ball(.22, '#fff9c4', .35, 2.7, 0, lamp, 1.3, .8, 1.3); lampHead.material.emissive = new THREE.Color('#fff3a0'); lampHead.material.emissiveIntensity = .5; // מוסט מהמרכז — במצלמת פה נראה כמו כובע על ראש המטופלת
   // שידת כלים + כיור
   w.box(1.2, .9, .6, '#eceff1', -2.3, .45, -2.6);
   w.box(1.3, .08, .7, '#ffffff', -2.3, .95, -2.6);
@@ -57,17 +57,17 @@ function startDentist3D(root) {
   // ---------- המטופלת (דמות מסתובבת — צבע לפי ביקור) ----------
   // זיהוי מין אמיתי (QA: חתולה/פיל היו אותו דוב בצבע אחר) — תכונות ראש לפי מין, לא תווית בלבד
   const SPECIES = {
-    'לולה החתולה': { col: '#b0bec5', feat: 'cat' },
-    'דני הארנב': { col: '#efe9dd', feat: 'rabbit' },
-    'ברי הדובי': { col: '#a1887f', feat: 'bear' },
-    'נוני הינשופית': { col: '#bcaaa4', feat: 'owl' },
-    'טדי הצב': { col: '#a5d6a7', feat: 'turtle' },
-    'ממי הקופית': { col: '#bc8f6f', feat: 'monkey' },
-    'תני התנין': { col: '#7cb342', feat: 'croc' },
-    'פילי הפיל': { col: '#b0bec5', feat: 'elephant' },
-    'פיפי התוכי': { col: '#4fc3f7', feat: 'parrot' },
-    'ליאו האריה': { col: '#ffb74d', feat: 'lion' },
-    'רקס הכלב': { col: '#c8956c', feat: 'dog' }
+    'לולה החתולה': { col: '#9e9e9e', feat: 'cat' },
+    'דני הארנב': { col: '#d7ccc0', feat: 'rabbit' },
+    'ברי הדובי': { col: '#8d6e63', feat: 'bear' },
+    'נוני הינשופית': { col: '#795548', feat: 'owl' },
+    'טדי הצב': { col: '#66bb6a', feat: 'turtle' },
+    'ממי הקופית': { col: '#8d6e63', feat: 'monkey' },
+    'תני התנין': { col: '#558b2f', feat: 'croc' },
+    'פילי הפיל': { col: '#78909c', feat: 'elephant' },
+    'פיפי התוכי': { col: '#039be5', feat: 'parrot' },
+    'ליאו האריה': { col: '#f57c00', feat: 'lion' },
+    'רקס הכלב': { col: '#a07548', feat: 'dog' }
   };
   const GIRLS = ['נועה הביישנית', 'מאי מלאת המרץ', 'טלי', 'דנה', 'יעלה הבמאית', 'סבתא שרה'];
   const SKIN = ['#ffdfc4', '#f1c27d', '#e0ac69'];
@@ -95,7 +95,7 @@ function startDentist3D(root) {
   if (feat === 'elephant') { w.ball(.3, pcol, -.52, .1, -.05, headG, .35, 1, .8); w.ball(.3, pcol, .52, .1, -.05, headG, .35, 1, .8); const tr = w.cyl(.07, .09, .42, pcol, 0, .3, .38, headG); tr.rotation.x = -.5; w.ball(.08, pcol, 0, .48, .48, headG) } // אוזניים ענק + חדק קצר כלפי מעלה
   if (feat === 'parrot') { const bk = w.cyl(.02, .1, .2, '#ff9800', 0, .06, .44, headG); bk.rotation.x = Math.PI / 2; [-.1, 0, .1].forEach((dx, i) => { const f = w.cyl(.01, .06, .22, ['#0288d1', '#ffeb3b', '#0288d1'][i], dx, .52, -.05, headG); f.rotation.z = dx * 2 }) } // מקור + ציצת נוצות
   if (feat === 'lion') { for (let a = 0; a < 8; a++) { const th = a / 8 * Math.PI * 2; w.ball(.14, '#e65100', Math.cos(th) * .42, Math.sin(th) * .42 + .02, -.18, headG) } } // רעמה
-  if (feat === 'dog') { const l = w.ball(.13, '#8d6e4a', -.38, .25, 0, headG, .6, 1.6, .7); l.rotation.z = .5; const r = w.ball(.13, '#8d6e4a', .38, .25, 0, headG, .6, 1.6, .7); r.rotation.z = -.5 } // אוזניים שמוטות
+  if (feat === 'dog') { const l = w.ball(.13, '#6d4c41', -.38, .25, 0, headG, .6, 1.6, .7); l.rotation.z = .5; const r = w.ball(.13, '#6d4c41', .38, .25, 0, headG, .6, 1.6, .7); r.rotation.z = -.5 } // אוזניים שמוטות
   if (feat === 'human') {
     w.ball(.46, hairC, 0, .16, -.12, headG, 1.05, .8, .95); // קערת שיער
     if (GIRLS.includes(cust.c[1])) { w.ball(.11, hairC, -.44, .18, -.05, headG); w.ball(.11, hairC, .44, .18, -.05, headG) } // קוקו
@@ -448,7 +448,7 @@ function startDentist3D(root) {
     const r = (!visitCounted && typeof prog3d !== 'undefined') ? prog3d.completeVisit('dentist') : null;
     visitCounted = true;
     w.banner(r && r.newLevel ? 'רמה ' + r.lvl + ' נפתחה!' : 'כל הכבוד! סיימת!', null);
-    w.endPanel('החיוך של ' + cust.c[1] + ' נקי ובריא!', 'ביקור חדש', () => location.reload());
+    w.endPanel('החיוך של ' + cust.c[1] + ' נקי ובריא!', 'ביקור חדש', () => { w.dispose(); startDentist3D(root); }); // ביקור חדש במקום — reload החזיר ללובי (מורה)
     speak('כל הכבוד רונה!', () => { if (r && r.newLevel) speak('רמה ' + r.lvl + ' נפתחה!') });
   }
 
