@@ -122,7 +122,7 @@ function roleScreen(role,sc){
   const c3=el('button','vet3d-card','<span class="v3emoji">🐶</span><span class="v3txt">✨ '+(v3v?'ביקור תלת-ממדי במרפאה':'חדש! ביקור תלת-ממדי במרפאה')+'</span>');
   if(v3v>0)c3.appendChild(el('span','v3visits','🐾'.repeat(Math.min(v3v,5))+(v3v>5?' ×'+v3v:'')));
   c3.onclick=()=>{sfx('tick');openVet3D()};sc.appendChild(c3)}
- if(role.id==='chef'){const c4=el('button','vet3d-card','<span class="v3emoji">🍳</span><span class="v3txt">✨ חדש! מטבח תלת-ממדי</span>');
+ if(role.id==='chef'&&new URLSearchParams(location.search).has('exp3d')){const c4=el('button','vet3d-card','<span class="v3emoji">🍳</span><span class="v3txt">✨ חדש! מטבח תלת-ממדי</span>');
   c4.onclick=()=>{sfx('tick');openChef3D()};sc.appendChild(c4)}
  sc.appendChild(lvlRow);
  const done=(STATE.done[role.id]||{})[unl]||{};
