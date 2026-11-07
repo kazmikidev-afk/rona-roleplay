@@ -1,4 +1,4 @@
-const CACHE='rona-roles-20261107a',FILES=['./','index.html','style.css','app.js','games.js','roles.js','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png'];
+const CACHE='rona-roles-20261107b',FILES=['./','index.html','style.css','app.js','games.js','roles.js','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil((async()=>{try{let c=await caches.open(CACHE);await c.addAll(FILES.map(f=>new Request(f+'?v='+CACHE,{cache:'no-cache'})));await self.skipWaiting();}catch(err){for(let cl of await self.clients.matchAll({includeUncontrolled:true}))cl.postMessage({type:'CACHE_ERROR'});throw err;}})()));
 self.addEventListener('activate',e=>e.waitUntil((async()=>{for(let k of await caches.keys())if(k.startsWith('rona-roles-')&&k!==CACHE)await caches.delete(k);await self.clients.claim();})()));
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==location.origin)return;e.respondWith((async()=>{const c=await caches.open(CACHE);return await c.match(e.request,{ignoreSearch:true})||(e.request.mode==='navigate'?await c.match('index.html'):fetch(e.request));})());});

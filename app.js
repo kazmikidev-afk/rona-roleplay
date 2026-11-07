@@ -98,6 +98,11 @@ function levelScreen(role,lvl,sc){
 // --- ביקור אצל דמות ---
 const INSTR={toolpick:'בחרי מברשת ומשחה כדי לנקות את השיניים',brush:'צחצחי במעגלים קטנים עד שהשיניים מנצנצות',patch:'שימי טלאי קסם צבעוני על הנקודה החולה',wobbly:'געי בעדינות בשן המתנדנדת',snacksort:'מייני: מה טוב לשיניים ומה רק קצת?',story:'בחרי איך הסיפור ממשיך',share:'חלקי לכולם שווה בשווה',dayorder:'סדרי את לוח היום של הגן',simon:'חזרי על התנועות של שיר המעבר',gallery:'תלי כל ציור במסגרת המתאימה',find:'מצאי על המדפים את מה שברשימה',count:'ספרי בקול והכניסי לתיק',change:'החזירי ללקוח את העודף הנכון',shelfsort:'סדרי את הסחורה על המדפים הנכונים',dressup:'בחרי תלבושת ותאורה לבמה',picksong:'בחרי איזה שיר נשיר בהופעה',rhythm:'מקישים כשהאור עובר באזור הזהב!',stetho:'שימי את הסטטוסקופ על הלב',bandage:'שימי פלסטר צבעוני על השריטה',temp:'החזיקי את המדחום על המצח',feed:'מה האוכל הנכון בשביל החיה?',furscrub:'הברישי את הפרווה עד שהיא נקייה ומבריקה',recipe:'בחרי מה מכינים היום במטבח',gather:'אספי את המרכיבים מהמדף',steps:'עשי את שלבי ההכנה בסדר הנכון',chop:'קצצי את הירקות לתוך הקערה',serve:'קשטי את הצלחת והגישי בחיוך',foodsort:'מייני: אוכל של כל יום או של פעמים מיוחדות'};
 
+const DISH_STEPS={salad:[{e:'🚿',n:'שוטפים'},{e:'🔪',n:'קוצצים'},{e:'🥣',n:'מערבבים'},{e:'🍽️',n:'מגישים'}],
+sandwich:[{e:'🍞',n:'לוקחים לחם'},{e:'🧀',n:'שמים מילוי'},{e:'🥪',n:'סוגרים את הכריך'},{e:'😋',n:'מגישים'}],
+shake:[{e:'🍌',n:'שמים פירות'},{e:'🥛',n:'מוסיפים חלב'},{e:'🌀',n:'טוחנים'},{e:'🥤',n:'מוזגים'}],
+pizza:[{e:'🖐️',n:'מרדדים בצק'},{e:'🍅',n:'מורחים רוטב'},{e:'🧀',n:'מפזרים גבינה'},{e:'🔥',n:'אופים'}]};
+
 function paramsFor(type,lvl,ctx){
  const ch=ctx.char;
  switch(type){
@@ -132,6 +137,9 @@ function paramsFor(type,lvl,ctx){
   case 'dressup':return{groups:[{key:'costume',q:'איזו תלבושת לבמה?',opts:COSTUMES.map(c=>({e:c,v:c}))},
    {key:'lights',q:'איזה צבע תאורה?',opts:LIGHTS.map(c=>({c,v:c}))}]};
   case 'picksong':return{groups:[{key:'song',q:'איזה שיר נשיר?',opts:SONGS.map(s=>({e:s.e,n:s.n,v:s.id}))}]};
+  case 'steps':{const dish=CHEF_DISHES.find(d=>d.id===STATE.choices.dish)||CHEF_DISHES[0];
+   const all=DISH_STEPS[dish.id]||DISH_STEPS.salad;
+   return{cards:all.slice(0,Math.min(all.length,2+lvl)),hint:'מה עושים קודם?'}}
   case 'recipe':return{groups:[{key:'dish',q:'מה מכינים היום?',opts:CHEF_DISHES.map(d=>({e:d.e,n:d.n,v:d.id}))}]};
   case 'serve':return{groups:[{key:'plate',q:'איך נקשט את הצלחת?',opts:[{e:'😊',n:'חיוכים',v:'😊'},{e:'😍',n:'לבבות',v:'😍'},{e:'⭐',n:'כוכבים',v:'⭐'}]}]};
   case 'rhythm':return{beats:[0,4,6,8][lvl],speed:2.2+lvl*.6};
@@ -158,7 +166,7 @@ function runVisit(role,lvl,ci){
    const rep=el('button','','🔊');rep.setAttribute('aria-label','שמע שוב');rep.onclick=()=>speak(INSTR[type]||'');instr.appendChild(rep);wrap.appendChild(instr);
    const area=el('div','play-area');wrap.appendChild(area);sc.appendChild(wrap);
    speak(INSTR[type]||'');
-   const runEngine=()=>GAMES[engineType(type)].run(area,paramsFor(engineType(type),alvl,{role,char:ch}),()=>{sfx('good');next()});
+   const runEngine=()=>GAMES[engineType(type)].run(area,paramsFor(type,alvl,{role,char:ch}),()=>{sfx('good');next()});
    // זרימות מיוחדות: בחירת צבע ראשונה לפני טלאי/פלסטר, בחירת מנה לפני איסוף
    if(type==='patch'&&!STATE.choices.patchColor){GAMES.choiceSave.run(area,{groups:[{key:'patchColor',q:'איזה צבע טלאי קסם?',opts:PATCHES.map(c=>({c,v:c}))}]},()=>{area.innerHTML='';speak(INSTR.patch);runEngine()});return}
    if(type==='bandage'&&!STATE.choices.bandageColor){GAMES.choiceSave.run(area,{groups:[{key:'bandageColor',q:'איזה צבע פלסטר?',opts:BANDAGES.map(c=>({c,v:c}))}]},()=>{area.innerHTML='';speak(INSTR.bandage);runEngine()});return}
